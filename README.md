@@ -415,7 +415,7 @@ Esta guía detalla los pasos para instalar y configurar **Grafana** en servidore
 3. **Iniciar el servidor de Grafana**:
 
     ```bash
-    cd grafana-v11.3.0+security-01/bin
+    cd grafana-v11.3.0/bin
     ./grafana-server
     ```
 
