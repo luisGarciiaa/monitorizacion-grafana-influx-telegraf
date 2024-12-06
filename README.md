@@ -27,12 +27,12 @@ Esta guía detalla los pasos para instalar y configurar **InfluxDB v2** en servi
     tar xvfz influxdb2-2.7.10_linux_amd64.tar.gz
     ```
 
-    Esto crea una carpeta llamada `influxdb2-2.7.10_linux_amd64` que contiene los binarios de InfluxDB. Navega a `influxdb2-2.7.10_linux_amd64/usr/bin` y podrás ver el ejecutable `influxd`.
+    Esto crea una carpeta llamada `influxdb2-2.7.10` que contiene los binarios de InfluxDB. Navega a `influxdb2-2.7.10/usr/bin` y podrás ver el ejecutable `influxd`.
 
 3. **Iniciar el servidor de InfluxDB**:
 
     ```bash
-    cd influxdb2-2.7.10_linux_amd64/usr/bin
+    cd influxdb2-2.7.10/usr/bin
     ./influxd
     ```
 
@@ -41,7 +41,8 @@ Esta guía detalla los pasos para instalar y configurar **InfluxDB v2** en servi
 
 ---
 
-## 2. Configuración Inicial a través de la Interfaz Web
+## 2. Configuración Inicial
+### **A. Escritorio con Navegador Web**
 
 1. **Abrir la Interfaz de Configuración**: Accede a [http://localhost:8086](http://localhost:8086) en un navegador.
 
@@ -112,7 +113,147 @@ Para que otros servidores puedan enviar métricas a este servidor InfluxDB desde
 
 --- 
 
-Con esta guía, has instalado y configurado InfluxDB v2, listo para recibir y almacenar métricas enviadas por Telegraf.
+
+### B. Servidores sin Entorno Gráfico
+
+#### 1. Descargar e Instalar el Cliente CLI
+
+El cliente CLI de InfluxDB no se incluye en el paquete principal y debe descargarse por separado. Sigue estos pasos:
+
+1. **Descargar el paquete del cliente CLI de InfluxDB**:
+   ```bash
+   wget https://dl.influxdata.com/influxdb/releases/influxdb2-client-2.7.5-linux-amd64.tar.gz
+   ```
+
+2. **Descomprimir el archivo descargado**:
+   ```bash
+   tar xvfz influxdb2-client-2.7.5-linux-amd64.tar.gz
+   ```
+
+3. **Mover el binario `influx` a un directorio incluido en tu variable `PATH`**:
+   ```bash
+   sudo mv influx /usr/local/bin/
+   ```
+
+4. **Verificar la instalación del cliente CLI**:
+   ```bash
+   influx version
+   ```
+
+Esto confirmará que el cliente CLI se instaló correctamente.
+
+---
+
+#### 2. Iniciar el servidor de InfluxDB
+
+Ejecuta el siguiente comando para iniciar InfluxDB en el servidor: Este paso es necesario para poder configurar influxdb y que la CLI pueda comunicarse con influxdb
+
+```bash
+cd influxdb2-2.7.10/usr/bin
+./influxd &
+```
+
+InfluxDB se ejecutará en el puerto `8086` por defecto. Deja este proceso corriendo en segundo plano(&) o abre otra terminal mientras este corre.
+
+---
+
+#### 3. Configuración Inicial mediante CLI
+
+El cliente CLI de InfluxDB (`influx`) te permite realizar la configuración inicial sin necesidad de un navegador web. Sigue estos pasos:
+
+1. **Acceder al CLI de InfluxDB**:
+   
+   Asegúrate de que el servidor `influxd` esté corriendo y luego ejecuta el cliente CLI desde cualquier terminal:
+   
+   ```bash
+   influx setup
+   ```
+
+2. **Introducir los parámetros iniciales**:
+
+   Durante la ejecución del comando `setup`, se te pedirá que introduzcas los siguientes valores:
+
+   - **Nombre de usuario**: Introduce un nombre de usuario para el administrador.
+   - **Contraseña**: Especifica una contraseña segura.
+   - **Nombre de la organización**: Proporciona un nombre para la organización, por ejemplo, `MiOrganización`.
+   - **Nombre del bucket**: Define un bucket para almacenar los datos (como nombre de la bbdd), como `MiBucket`.
+   - **Duración de retención de datos** (en horas): Introduce el número de horas para la retención de datos. Si no deseas configurar una retención específica, puedes introducir `0` (sin límite de retención).
+
+
+**te preguntara si todo es correcto(y/n)**  
+    aceptamos
+
+
+---
+
+#### 4. Obtener el Token de Acceso
+
+Si necesitas recuperar el token generado durante la configuración inicial, ejecuta el siguiente comando:
+
+```bash
+influx auth list
+```
+
+Esto mostrará una lista de tokens disponibles, junto con sus permisos. Copia el token que corresponda a tu configuración.desde que comienza el token hasta == .Este parametro sera necesario para telegraf.
+
+---
+
+
+#### 5. Configurar InfluxDB como un Servicio
+
+Para que InfluxDB se ejecute automáticamente cada vez que el servidor se inicie, puedes configurarlo como un servicio del sistema.
+
+1. **Crear un archivo de servicio para systemd**:
+   ```bash
+   sudo nano /etc/systemd/system/influxdb.service
+   ```
+
+   Añade el siguiente contenido al archivo:
+   ```ini
+   [Unit]
+   Description=InfluxDB Service
+   After=network.target
+
+   [Service]
+   ExecStart=/ruta/completa/a/influxd
+   Restart=always
+   User=tu_usuario
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+   Reemplaza `/ruta/completa/a/influxd` con la ruta completa donde está ubicado el binario `influxd`.
+
+2. **Recargar los servicios de systemd**:
+   ```bash
+   sudo systemctl daemon-reload
+   ```
+
+3. **Habilitar el servicio para que se inicie automáticamente**:
+   ```bash
+   sudo systemctl enable influxdb
+   ```
+
+4. **Iniciar el servicio**:
+   ```bash
+   sudo systemctl start influxdb
+   ```
+
+5. **Verificar el estado del servicio**:
+   ```bash
+   sudo systemctl status influxdb
+   ```
+
+---
+
+Con esta guía, has instalado y configurado InfluxDB v2 en un entorno sin interfaz gráfica, listo para recibir y almacenar métricas. Y estara configurado como servicio. Cuando configuremos Telegraf, necesitaremos el nombre del bucket, el nombre de la organización, el token y la IP del servidor donde está corriendo InfluxDB.
+
+
+
+
+
+
 
 
 
