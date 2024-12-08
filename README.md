@@ -740,6 +740,46 @@ Para configurar el envío de notificaciones por correo desde Grafana, debes modi
 4. **Probar el Correo**:
    - Ve a **Configuration > Notification Channels** en la interfaz de Grafana.
    - Configura un canal de notificación con el correo configurado y realiza una prueba para verificar que funciona.
+   - 
+   
+
+## 3. Importar un Dashboard en Grafana
+
+Después de configurar Grafana y conectar las fuentes de datos, el siguiente paso es importar un dashboard predefinido para visualizar los datos. A continuación, se detallan los pasos para importar un dashboard desde un archivo JSON, como los que se pueden encontrar en repositorios de GitHub.
+
+### Pasos para Importar un Dashboard
+
+1. **Accede a la Sección de Dashboards**:
+   - En la barra lateral izquierda de Grafana, selecciona **"Dashboards"**.
+   - En la parte superior derecha, haz clic en el botón azul **"New"**.
+
+2. **Selecciona la Opción "Import"**:
+   - En el menú desplegable, selecciona la opción **"Import"**.
+
+3. **Carga el Archivo JSON**:
+   - Desde la página de importación, tienes dos opciones para cargar el dashboard:
+     - **Subir un archivo JSON**:
+       - Haz clic en **"Upload JSON file"** y selecciona el archivo JSON del dashboard que deseas importar.
+     - **Pegar el JSON**:
+       - Si tienes el código JSON, pégalo directamente en el cuadro de texto proporcionado.
+
+4. **Configura el Dashboard Importado**:
+   - Se te pedirá que selecciones o confirmes la **fuente de datos** asociada al dashboard. Asegúrate de elegir la fuente correcta (por ejemplo, InfluxDB configurado previamente).
+
+5. **Haz clic en "Import"**:
+   - Una vez que hayas configurado la fuente de datos, haz clic en el botón **"Import"**.
+
+6. **Verifica el Dashboard Importado**:
+   - El dashboard aparecerá inmediatamente en tu lista de dashboards.
+   - Ábrelo y verifica que los datos se estén mostrando correctamente según las métricas configuradas.
+
+### Notas Adicionales
+
+- **Dónde Encontrar Dashboards JSON**:
+  - Puedes encontrar el dashboard en github/dashboards
+
+
+
 
 
 
