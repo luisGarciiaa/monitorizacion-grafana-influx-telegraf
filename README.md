@@ -511,8 +511,105 @@ Ahora que hemos configurado `telegraf.conf`, podemos ejecutar Telegraf y enviar 
 - Una vez ejecutado, Telegraf comenzará a enviar las métricas a InfluxDB.
 - Puedes verificar que las métricas están siendo recibidas correctamente desde la interfaz de InfluxDB, accediendo a **Data Explorer** y ejecutando una consulta para revisar las métricas.
 
-**Nota**: Si quieres que Telegraf se ejecute en segundo plano, puedes usar `nohup` 
+
+
+
+
+### 5 Configurar Telegraf como un Servicio
+
+#### Descripción General
+
+Esta guía explica cómo configurar **Telegraf** como un servicio utilizando **systemd** en sistemas Linux. Al configurarlo como un servicio, **Telegraf** se ejecutará automáticamente cada vez que el servidor se inicie, asegurando que las métricas se recojan y envíen continuamente a **InfluxDB** sin necesidad de intervención manual.
+
 ---
+
+#### 1. Crear un archivo de servicio para systemd
+
+1. Abre un terminal y crea un archivo de servicio para Telegraf en el directorio de configuración de systemd:
+   ```bash
+   sudo nano /etc/systemd/system/telegraf.service
+   ```
+
+2. Añade el siguiente contenido al archivo:
+   ```ini
+   [Unit]
+   Description=Telegraf Service
+   After=network.target
+
+   [Service]
+   ExecStart=/ruta/completa/a/telegraf --config /ruta/completa/a/telegraf.conf
+   Restart=always
+   User=tu_usuario
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+   - **`ExecStart`**: Especifica la ruta completa al binario de Telegraf y al archivo de configuración (`telegraf.conf`). Por ejemplo:
+     ```bash
+     ExecStart=/home/luisgarcia/telegraf-1.32.2/usr/bin/telegraf --config /home/luisgarcia/telegraf-1.32.2/usr/bin/telegraf.conf
+     ```
+   - **`User`**: Cambia `tu_usuario` por el usuario que ejecutará el servicio (por ejemplo, `luisgarcia`).
+
+---
+
+#### 2. Recargar systemd
+
+Después de guardar el archivo, recarga los demonios de **systemd** para que el nuevo archivo de servicio sea reconocido:
+```bash
+sudo systemctl daemon-reload
+```
+
+---
+
+#### 3. Habilitar el servicio para inicio automático
+
+Habilita el servicio para que se ejecute automáticamente cada vez que el servidor arranque:
+```bash
+sudo systemctl enable telegraf
+```
+
+---
+
+#### 4. Iniciar el servicio de Telegraf
+
+Inicia el servicio de Telegraf manualmente para comprobar que funciona correctamente:
+```bash
+sudo systemctl start telegraf
+```
+
+---
+
+#### 5. Verificar el estado del servicio
+
+Revisa el estado del servicio para confirmar que está corriendo sin problemas:
+```bash
+sudo systemctl status telegraf
+```
+
+Si el servicio se está ejecutando correctamente, deberías ver una salida indicando que está activo (`Active: active (running)`).
+
+---
+
+#### 6. Logs del servicio
+
+Para depurar problemas o verificar que Telegraf está funcionando correctamente, puedes consultar los logs del servicio:
+```bash
+sudo journalctl -u telegraf -f
+```
+
+Esto mostrará los eventos en tiempo real relacionados con el servicio de Telegraf.
+
+---
+
+#### 7. Notas adicionales
+
+- **Permisos de usuario**: Asegúrate de que el usuario especificado en `User` tenga permisos para acceder al archivo de configuración (`telegraf.conf`) y ejecutar cualquier script asociado.
+- **Plugins personalizados**: Si estás utilizando plugins como `exec`, asegúrate de que las rutas especificadas en los comandos son accesibles y tienen los permisos correctos.
+- **Prueba del servicio**: Después de configurar, realiza una consulta en InfluxDB para confirmar que las métricas están siendo enviadas correctamente.
+
+Con esta configuración, Telegraf estará listo para ejecutarse automáticamente y garantizar una recolección continua de métricas.
+
 
 
 
@@ -644,5 +741,5 @@ Para configurar el envío de notificaciones por correo desde Grafana, debes modi
    - Ve a **Configuration > Notification Channels** en la interfaz de Grafana.
    - Configura un canal de notificación con el correo configurado y realiza una prueba para verificar que funciona.
 
----
+
 
