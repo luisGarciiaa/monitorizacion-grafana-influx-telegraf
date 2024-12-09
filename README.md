@@ -780,24 +780,28 @@ El proceso para añadir un nuevo servicio depende de si deseas monitorizar un se
 import requests
 
 # Define la URL del servicio
-url = "https://example.com"
+url = "http://localhost:27017/"
 # Define un alias descriptivo para el servicio
-alias = "servicio_ejemplo"
+alias="mongodb"
 # Define las palabras clave asociadas al servicio
-keywords = "frontend\,backend\,ejemplo"
+keywords = "backend\,webserver\,real"
 
 try:
     response = requests.get(url, timeout=2)
     if response.status_code == 200:
         print(f"http_response,url={url},source=url,nombre=\"{alias}\",keywords=\"{keywords}\" status_code=200,message=\"OK\"")
     else:
-        error_message = response.text.replace('"', '\\"')
+        # Almacena el contenido de la respuesta en caso de error
+        error_message = response.text.replace('"', '\\"')  # Escapa comillas en el mensaje
         print(f"http_response,url={url},source=url,nombre=\"{alias}\",keywords=\"{keywords}\" status_code={response.status_code},message=\"{error_message}\"")
 except requests.exceptions.Timeout:
     print(f"http_response,url={url},source=url,nombre=\"{alias}\",keywords=\"{keywords}\" status_code=408,message=\"Timeout\"")
 except requests.exceptions.RequestException as e:
-    error_message = str(e).replace('"', '\\"')
+    # Almacena el mensaje de error en caso de que haya una excepción en la solicitud
+    error_message = str(e).replace('"', '\\"')  # Escapa comillas en el mensaje
     print(f"http_response,url={url},source=url,nombre=\"{alias}\",keywords=\"{keywords}\" status_code=500,message=\"{error_message}\"")
+
+
 ```
 
 ### Modificación de Variables y Configuración
@@ -827,28 +831,37 @@ except requests.exceptions.RequestException as e:
    Utiliza la siguiente plantilla:(Github:scripts/docker1.py):
 
    ```python
-   import docker
+import docker
 
-   # Define las variables del contenedor
-   target_container_name = "nombre_del_contenedor"
-   alias = "alias_contenedor"
-   keywords = "docker\,contenedor\,ejemplo"
+#Define el nombre del contenedor
+target_container_name = "mongodb"
+#Define un alias descriptivo para el contenedor
+alias = "mongodb"
+#Define las palabras clave asociadas al contenedor
+keywords = "docker\,real\,mongodb"
 
-   try:
-       client = docker.DockerClient(base_url='unix://var/run/docker.sock')
-       container = client.containers.get(target_container_name)
-       container_status = container.status
+try:
+    # Conecta al cliente Docker
+    client = docker.DockerClient(base_url='unix://var/run/docker.sock')
 
-       if container_status == "running":
-           print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=200,message=\"OK\"")
-       else:
-           print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=500,message=\"{container_status}\"")
+    # Intenta obtener el contenedor por su nombre
+    container = client.containers.get(target_container_name)
+    container_status = container.status
 
-   except docker.errors.NotFound:
-       print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=404,message=\"Not Found\"")
-   except docker.errors.DockerException as e:
-       error_message = str(e).replace('"', '\\"')
-       print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=500,message=\"{error_message}\"")
+    if container_status == "running":
+        print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=200,message=\"OK\"")
+    else:
+        print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=500,message=\"{container_status}\"")
+
+except docker.errors.NotFound:
+    # Si no se encuentra el contenedor
+    print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=404,message=\"Not Found\"")
+
+except docker.errors.DockerException as e:
+    # Manejo de errores generales de Docker
+    error_message = str(e).replace('"', '\\"')  # Escapa comillas en el mensaje
+    print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=500,message=\"{error_message}\"")
+
    ```
    
    ### Modifica las variables en la plantilla
