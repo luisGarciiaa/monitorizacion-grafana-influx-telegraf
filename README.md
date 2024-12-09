@@ -777,6 +777,137 @@ Después de configurar Grafana y conectar las fuentes de datos, el siguiente pas
 
 - **Dónde Encontrar Dashboards JSON**:
   - Puedes encontrar el dashboard en github/dashboards
+  
+---
+
+
+
+
+# Añadir un Nuevo Servidor o Servicio al Sistema de Monitorización
+
+## 1. Añadir un Nuevo Servidor
+Para añadir un nuevo servidor al sistema de monitorización, únicamente debes instalar y configurar **Telegraf** en el servidor que desees monitorizar. Asegúrate de que Telegraf esté configurado para enviar las métricas a la base de datos InfluxDB. Esto es posible porque los dashboards de Grafana permiten seleccionar cualquier servidor configurado en la base de datos.
+
+Sigue estos pasos:
+1. Instala **Telegraf** en el nuevo servidor.
+2. Configura el archivo `telegraf.conf` para que envíe las métricas relevantes a la base de datos InfluxDB.
+3. Verifica que los datos estén llegando correctamente a la base de datos.
+
+Para más detalles, consulta la sección de configuración de **Telegraf** en este manual.
+
+---
+
+## 2. Añadir un Nuevo Servicio
+### Opciones de Servicios:
+- **Servicios Web (URLs)**
+- **Contenedores Docker**
+
+El proceso para añadir un nuevo servicio depende de si deseas monitorizar un servicio web o un contenedor Docker. A continuación, se detalla cómo hacerlo.
+
+### 2.1 Monitorización de Servicios Web (URLs)
+1. Crea un nuevo archivo Python en la carpeta de scripts del sistema, siguiendo esta plantilla:
+
+```python
+import requests
+
+# Define la URL del servicio
+url = "https://example.com"
+# Define un alias descriptivo para el servicio
+alias = "servicio_ejemplo"
+# Define las palabras clave asociadas al servicio
+keywords = "frontend\,backend\,ejemplo"
+
+try:
+    response = requests.get(url, timeout=2)
+    if response.status_code == 200:
+        print(f"http_response,url={url},source=url,nombre=\"{alias}\",keywords=\"{keywords}\" status_code=200,message=\"OK\"")
+    else:
+        error_message = response.text.replace('"', '\\"')
+        print(f"http_response,url={url},source=url,nombre=\"{alias}\",keywords=\"{keywords}\" status_code={response.status_code},message=\"{error_message}\"")
+except requests.exceptions.Timeout:
+    print(f"http_response,url={url},source=url,nombre=\"{alias}\",keywords=\"{keywords}\" status_code=408,message=\"Timeout\"")
+except requests.exceptions.RequestException as e:
+    error_message = str(e).replace('"', '\\"')
+    print(f"http_response,url={url},source=url,nombre=\"{alias}\",keywords=\"{keywords}\" status_code=500,message=\"{error_message}\"")
+```
+
+### Modificación de Variables y Configuración
+
+#### **Monitorización de Servicios Web**
+
+1. **Modifica las variables en la plantilla**:
+   - **`url`**: Especifica la URL del servicio a monitorizar.
+   - **`alias`**: Asigna un nombre descriptivo al servicio.
+   - **`keywords`**: Define las palabras clave asociadas al servicio para facilitar los filtros en Grafana.
+
+2. **Añade el script al archivo de configuración de Telegraf (`telegraf.conf`) como un plugin exec**:
+   ```ini
+   [[inputs.exec]]
+     commands = ["python3 /ruta/al/script.py"]  # Comando que se ejecutará periódicamente (asegúrate de que la ruta al script sea correcta).
+     interval = "30s"  # Intervalo de ejecución del script (cada 30 segundos en este caso).
+     timeout = "10s"  # Tiempo máximo permitido para que el script se ejecute antes de interrumpirlo.
+     data_format = "influx"  # Formato esperado para los datos generados (InfluxDB en este caso).
+     name_override = "http_response"  # Nombre base de la medición almacenada en la base de datos.
+
+     [inputs.exec.tags]
+       url = "https://example.com"  # URL del servicio que se está monitorizando.
+   ```
+### Monitorización de Contenedores Docker
+
+1. **Crea un nuevo archivo Python en la carpeta de scripts del sistema**:
+   Utiliza la siguiente plantilla:
+
+   ```python
+   import docker
+
+   # Define las variables del contenedor
+   target_container_name = "nombre_del_contenedor"
+   alias = "alias_contenedor"
+   keywords = "docker\,contenedor\,ejemplo"
+
+   try:
+       client = docker.DockerClient(base_url='unix://var/run/docker.sock')
+       container = client.containers.get(target_container_name)
+       container_status = container.status
+
+       if container_status == "running":
+           print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=200,message=\"OK\"")
+       else:
+           print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=500,message=\"{container_status}\"")
+
+   except docker.errors.NotFound:
+       print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=404,message=\"Not Found\"")
+   except docker.errors.DockerException as e:
+       error_message = str(e).replace('"', '\\"')
+       print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=500,message=\"{error_message}\"")
+   ```
+   
+   ### Modifica las variables en la plantilla
+
+1. **Variables**:
+   - **`target_container_name`**: Especifica el nombre del contenedor Docker a monitorizar.
+   - **`alias`**: Asigna un nombre descriptivo al contenedor.
+   - **`keywords`**: Define las palabras clave asociadas al contenedor.
+
+2. **Configuración en Telegraf**:
+   Añade el script al archivo de configuración de Telegraf (`telegraf.conf`) como un plugin `exec`:
+
+   ```ini
+   [[inputs.exec]]
+     commands = ["python3 /ruta/al/script_docker.py"]  # Comando para ejecutar el script de monitorización del contenedor Docker.
+     interval = "30s"  # Intervalo de ejecución del script (cada 30 segundos).
+     timeout = "10s"  # Tiempo máximo permitido para que el script se ejecute antes de interrumpirlo.
+     data_format = "influx"  # Formato esperado para los datos generados (InfluxDB en este caso).
+     name_override = "http_response"  # Nombre base de la medición almacenada en la base de datos.
+
+     [inputs.exec.tags]
+       url = "docker"  # Etiqueta que indica que los datos provienen de un contenedor Docker.
+
+   ```
+  
+
+
+
 
 
 
