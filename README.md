@@ -1,6 +1,70 @@
 # Guía de Instalación y Configuración del Sistema de Monitorización (Influxdb_v2, Telegraf y Grafana)
 ---
-# 1.Guía de Instalación y Configuración de InfluxDB v2
+# Índice de la Guía de Configuración del Sistema de Monitorización
+
+1. **Introducción**
+   - Descripción general del sistema
+   - Componentes principales: InfluxDB, Telegraf, Grafana
+
+2. **Instalación y Configuración de InfluxDB**
+   - Requisitos
+   - Pasos de instalación
+   - Configuración inicial
+   - Configuración avanzada (retención de datos, tokens, etc.)
+
+3. **Instalación y Configuración de Telegraf**
+   - Requisitos
+   - Pasos de instalación
+   - Configuración de entradas (`inputs`)
+     - Monitorización básica (CPU, memoria, disco)
+     - Monitorización de servicios web
+     - Monitorización de contenedores Docker
+   - Configuración de salidas (`outputs`)
+   - Ejecución y verificación de Telegraf
+   - Configuración de Telegraf como servicio
+
+4. **Instalación y Configuración de Grafana**
+   - Requisitos
+   - Pasos de instalación
+   - Configuración inicial
+   - Configuración de notificaciones por correo
+   - Importación de dashboards predefinidos
+
+5. **Creación y Configuración de Dashboards**
+   - **Definición del Dashboard de Servidores**
+     - Descripción del propósito
+     - Métricas mostradas
+     - Configuración de consultas en Grafana
+   - **Definición del Dashboard de Servicios**
+     - Descripción del propósito
+     - Métricas mostradas
+     - Configuración de consultas en Grafana
+
+6. **Añadir Nuevos Servidores o Servicios**
+   - Añadir un nuevo servidor
+   - Añadir un nuevo servicio
+     - Monitorización de servicios web
+     - Monitorización de contenedores Docker
+
+
+---
+---
+# 1. Introducción
+
+## Descripción General del Sistema
+
+Este sistema de monitorización combina tres herramientas clave: **InfluxDB**, **Telegraf** y **Grafana**, para ofrecer una solución eficiente y flexible para la recopilación, almacenamiento y visualización de métricas en servidores y servicios.
+
+- **InfluxDB**: Una base de datos optimizada para manejar datos de series temporales, ideal para almacenar métricas con gran frecuencia de actualización.
+- **Telegraf**: Un agente ligero que recopila datos de servidores y servicios (como URLs o contenedores Docker) y los envía a InfluxDB.
+- **Grafana**: Una plataforma de visualización que transforma las métricas almacenadas en dashboards interactivos, fáciles de entender y personalizar.
+
+El objetivo principal es centralizar la monitorización, facilitar la detección de problemas y ofrecer herramientas para tomar decisiones rápidas basadas en datos en tiempo real.
+
+---
+---
+
+# 2.Guía de Instalación y Configuración de InfluxDB v2
 
 ## Descripción General
 Esta guía detalla los pasos para instalar y configurar **InfluxDB v2** en servidores Linux usando binarios. InfluxDB v2 se utilizará para almacenar las métricas recolectadas por Telegraf y permitirá la visualización de los datos en Grafana.
@@ -39,10 +103,10 @@ Esta guía detalla los pasos para instalar y configurar **InfluxDB v2** en servi
     InfluxDB se iniciará en el puerto `8086`. Puedes verificar su funcionamiento accediendo a [http://localhost:8086](http://localhost:8086) desde un navegador web. Puedes cancelar la ejecucion con ctrl + C.
 
 
----
+
 
 ## 2. Configuración Inicial
-### **A. Escritorio con Navegador Web**
+### A. Servidor con Entorno Gráfico 
 
 1. **Abrir la Interfaz de Configuración**: Accede a [http://localhost:8086](http://localhost:8086) en un navegador.
 
@@ -62,7 +126,7 @@ Esta configuración inicial solo se realiza la primera vez que inicias InfluxDB 
 
 ---
 
-## 3. Configuración de API y Token de Acceso
+#### 3. Configuración de API y Token de Acceso
 
 Para permitir la conexión desde Telegraf u otras aplicaciones externas, necesitas un token de acceso.
 
@@ -71,7 +135,7 @@ Para permitir la conexión desde Telegraf u otras aplicaciones externas, necesit
 
 ---
 
-## 4. Configuración de Retención de Datos
+#### 4. Configuración de Retención de Datos
 
 1. Navega a **Data > Buckets** en la interfaz de InfluxDB.
 2. Selecciona el bucket que creaste durante la configuración inicial (ej. `MiBucket`).
@@ -79,7 +143,7 @@ Para permitir la conexión desde Telegraf u otras aplicaciones externas, necesit
 
 ---
 
-## 5. Comprobación de la IP del Servidor y Preparación para la Conexión Externa de Telegraf
+#### 5. Comprobación de la IP del Servidor y Preparación para la Conexión Externa de Telegraf
 
 Para que otros servidores puedan enviar métricas a este servidor InfluxDB desde Telegraf, sigue estos pasos:
 
@@ -199,7 +263,7 @@ Esto mostrará una lista de tokens disponibles, junto con sus permisos. Copia el
 ---
 
 
-#### 5. Configurar InfluxDB como un Servicio
+## 3. Configurar InfluxDB como un Servicio
 
 Para que InfluxDB se ejecute automáticamente cada vez que el servidor se inicie, puedes configurarlo como un servicio del sistema.
 
@@ -276,7 +340,7 @@ Con esta guía, has instalado y configurado InfluxDB v2 en un entorno sin interf
 
 
 
-# Guía de Instalación y Configuración de Telegraf en Servidores
+# 3.Guía de Instalación y Configuración de Telegraf en Servidores
 
 ## Descripción General
 Esta parte del documento explica los pasos para instalar y configurar el agente **Telegraf** para la recolección de métricas en servidores de Linux, con envío de datos a **InfluxDB** y la posterior visualizacion en **Grafana**. El propósito es simplificar el proceso de despliegue.
@@ -378,114 +442,19 @@ Al generar el archivo `telegraf.conf`, los plugins de entrada básicos como `cpu
 
 ## 3. Configurar los plugins personalizados
 
-Para monitorizar respuestas HTTP o ejecutar scripts específicos, debemos configurar los plugins `http_response` y `exec`. exec lo usaremos para obtener la respuesta de las urls a monitorizar.
+Para monitorizar respuestas HTTP o ejecutar scripts específicos, debemos configurar los plugins `exec`. exec lo usaremos para obtener la informacion de los servicios que necesitamos monitorear, tanto url como docker.
 
-### Configuración del plugin `http_response`
+La configuración de nuevos servicios (como URLs) o contenedores Docker para monitorización requiere crear scripts personalizados y configurarlos en Telegraf. 
 
-Este plugin permite monitorizar el tiempo de respuesta de URLs específicas. Se configura como sigue:
+#### Pasos Resumidos:
+1. **Crea un script Python** para recolectar métricas del servicio o contenedor.
+2. **Añade el script como un plugin `exec` en el archivo `telegraf.conf`**, especificando la ruta al script, el intervalo de ejecución y el formato de datos.
+3. **Verifica la configuración** ejecutando Telegraf y comprobando las métricas en InfluxDB.
 
-```ini
-[[inputs.http_response]]
-  urls = ["https://api.github.com/", "https://postman-echo.com/get"] # URLs a monitorizar.
-  interval = "10s"                     # Intervalo de consulta.
-  method = "GET"                       # Método de solicitud HTTP.
-  response_timeout = "5s"              # Tiempo máximo de espera.
-  name_override = "http_response_time" # Personaliza el nombre de la métrica.
-```
+#### Más Información
+Para una guía detallada, Consulta la sección [6. Añadir un Nuevo Servidor o Servicio al Sistema de Monitorización](#6-añadir-un-nuevo-servidor-o-servicio-al-sistema-de-monitorización) para más detalles.
+ en este manual. Allí encontrarás plantillas de scripts, ejemplos y una explicación completa sobre cómo realizar esta configuración.
 
-### Configuración del plugin `exec`
-
-Este plugin permite ejecutar scripts externos para recolectar métricas específicas. En este caso, utilizamos scripts en Python para obtener mensajes de error y respuestas HTTP.
-
-#### Ejemplo de configuración para un script de Python:
-Estos son ejemplos reales en mi ordenador personal.
-```ini
-[[inputs.exec]]
-  commands = ["python3 /home/luisgarcia/tfg/scripts/mensaje.py"] # Ruta absoluta del script.
-  interval = "60s"                                              # Intervalo de ejecución.
-  timeout = "10s"                                               # Tiempo máximo de espera.
-  data_format = "influx"                                        # Formato de datos.
-  name_override = "http_response"                               # Nombre común para la métrica.
-  
-  [inputs.exec.tags]
-    url = "http://primero.com" # Etiqueta para identificar la URL procesada.
-```
-
-#### Ejemplo para una segunda URL:
-
-```ini
-[[inputs.exec]]
-  commands = ["python3 /home/luisgarcia/tfg/scripts/mensaje2.py"]
-  interval = "60s"
-  timeout = "10s"
-  data_format = "influx"
-  name_override = "http_response"
-  
-  [inputs.exec.tags]
-    url = "http://segundo.com"
-```
-
-
-## Uso del Script en Python para Monitorizar APIs
-
-El script al que hemos llamado en telegraf.conf, es el siguiente, esta escrito en Python, permite monitorizar el estado y la respuesta de una API. Es útil para identificar errores, medir tiempos de respuesta y registrar cualquier fallo o comportamiento inesperado. El script utiliza la biblioteca `requests` para realizar solicitudes HTTP y está diseñado para ser altamente configurable. A continuacion un resumen del funcionamiento, la configuracion y el codigo ejemplo:
-
-### Resumen del Funcionamiento del Script
-
-1. **Solicita la URL**:  
-   El script realiza una solicitud HTTP a la URL configurada utilizando la biblioteca `requests`.
-
-2. **Manejo de Respuestas**:
-   - Si la API responde correctamente (código 200), imprime un mensaje de éxito.
-   - Si ocurre un error (por ejemplo, códigos 404 o 500), registra el mensaje de error.
-
-3. **Manejo de Errores**:
-   - En caso de tiempo de espera agotado, muestra un mensaje indicando el timeout.
-   - Si ocurre algún otro problema de red, captura la excepción y registra el error.
-
-Este script permite monitorizar el estado de las APIs y detectar rápidamente problemas en las respuestas.
-
-
-### Configuración para Adaptar el Script
-
-El script está diseñado para que sea fácil de personalizar. A continuación, se explican las partes clave que se pueden modificar:
-
-1. **URL a Monitorizar**:
-   - Cambia la variable `url` por la dirección de tu API. Puedes usar diferentes URLs para probar su funcionamiento.
-
-2. **Tiempo de Espera (Timeout)**:
-   - Ajusta el tiempo de espera según las características de tu API:
-     ```python
-     response = requests.get(url, timeout=5)  # Cambia 5 por el tiempo deseado en segundos
-     ```
-
-
-### Ejemplo del Script en Python
-
-A continuación, se presenta el script completo que puedes usar como base:
-
-```python
-import requests
-
-url = "http://example.com/api"  # Cambia esto por la URL que deseas monitorizar
-
-try:
-    response = requests.get(url, timeout=2)
-    if response.status_code == 200:
-        print(f"http_response,url={url} status_code=200,message=\"OK\"")
-    else:
-        # Almacena el contenido de la respuesta en caso de error
-        error_message = response.text.replace('"', '\\"')  # Escapa comillas en el mensaje
-        print(f"http_response,url={url} status_code={response.status_code},message=\"{error_message}\"")
-except requests.exceptions.Timeout:
-    print(f"http_response,url={url} status_code=408,message=\"Timeout\"")
-except requests.exceptions.RequestException as e:
-    # Almacena el mensaje de error en caso de que haya una excepción en la solicitud
-    error_message = str(e).replace('"', '\\"')  # Escapa comillas en el mensaje
-    print(f"http_response,url={url} status_code=500,message=\"{error_message}\"")
-````
-
-ejecutar telegraf. ahora podemos ejecutar telegraf y desde influx podremos ver las metricas configuradas en telegraf.
 
 
 ## 4. Ejecutar Telegraf
@@ -619,7 +588,7 @@ Con esta configuración, Telegraf estará listo para ejecutarse automáticamente
 
 
 
-# Guía de Instalación y Configuración de Grafana
+# 4.Guía de Instalación y Configuración de Grafana
 
 ## Descripción General
 Esta guía detalla los pasos para instalar y configurar **Grafana** en servidores Linux. Grafana se utilizará para visualizar los datos almacenados en InfluxDB v2 y generados por Telegraf.
@@ -783,7 +752,7 @@ Después de configurar Grafana y conectar las fuentes de datos, el siguiente pas
 
 
 
-# Añadir un Nuevo Servidor o Servicio al Sistema de Monitorización
+# 6. Añadir un Nuevo Servidor o Servicio al Sistema de Monitorización
 
 ## 1. Añadir un Nuevo Servidor
 Para añadir un nuevo servidor al sistema de monitorización, únicamente debes instalar y configurar **Telegraf** en el servidor que desees monitorizar. Asegúrate de que Telegraf esté configurado para enviar las métricas a la base de datos InfluxDB. Esto es posible porque los dashboards de Grafana permiten seleccionar cualquier servidor configurado en la base de datos.
@@ -805,7 +774,7 @@ Para más detalles, consulta la sección de configuración de **Telegraf** en es
 El proceso para añadir un nuevo servicio depende de si deseas monitorizar un servicio web o un contenedor Docker. A continuación, se detalla cómo hacerlo.
 
 ### 2.1 Monitorización de Servicios Web (URLs)
-1. Crea un nuevo archivo Python en la carpeta de scripts del sistema, siguiendo esta plantilla:
+1. Crea un nuevo archivo Python en la carpeta de scripts del sistema, siguiendo esta plantilla(Github:scripts/mensaje3.py):
 
 ```python
 import requests
@@ -855,7 +824,7 @@ except requests.exceptions.RequestException as e:
 ### Monitorización de Contenedores Docker
 
 1. **Crea un nuevo archivo Python en la carpeta de scripts del sistema**:
-   Utiliza la siguiente plantilla:
+   Utiliza la siguiente plantilla:(Github:scripts/docker1.py):
 
    ```python
    import docker
