@@ -476,37 +476,47 @@ Añade las siguientes configuraciones a la sección `[[inputs]]` de tu archivo `
 
 ```ini
 [[inputs.exec]]
-  commands = ["python3 /ruta/completa/a/scripts/servicios.py"]  # Ejecuta el script para servicios web
+  commands = ["python3 /ruta/completa/a/scripts/monitor_servicio.py"]  # Ejecuta el script para servicios web
   interval = "30s"  # Ejecuta el script cada 30 segundos
   timeout = "10s"  # Tiempo máximo permitido para que el script se ejecute
   data_format = "influx"  # Formato esperado de los datos generados
   name_override = "servicio_gen"  # Nombre base de la medición en InfluxDB
-
+  [inputs.exec.tags]
+    url = "servicio_general"
+    
 [[inputs.exec]]
-  commands = ["python3 /ruta/completa/a/scripts/dockers.py"]  # Ejecuta el script para contenedores Docker
+  commands = ["python3 /ruta/completa/a/scripts/monitor_docker.py"]  # Ejecuta el script para contenedores Docker
   interval = "30s"  # Ejecuta el script cada 30 segundos
   timeout = "10s"  # Tiempo máximo permitido para que el script se ejecute
   data_format = "influx"  # Formato esperado de los datos generados
   name_override = "docker_gen"  # Nombre base de la medición en InfluxDB
+  [inputs.exec.tags]
+    url = "docker_general"
 ```
 
-### Notas sobre la configuración
+# Notas sobre la configuración
 
-1. **Ruta completa a los scripts**:
-   - Asegúrate de especificar la ruta completa a los scripts `servicios.py` y `dockers.py`. Por ejemplo:
-     ```bash
-     /home/usuario/tfg/scripts/servicios.py
-     /home/usuario/tfg/scripts/dockers.py
-     ```
+### Ruta completa a los scripts
+- Asegúrate de especificar la ruta completa a los scripts `monitor_servicio.py` y `monitor_docker.py`. Por ejemplo:
+  ```bash
+  /home/usuario/tfg/scripts/servicios.py
+  /home/usuario/tfg/scripts/dockers.py
+  ```
 
-2. **Ubicación de los JSON**:
-   - Los scripts leen los archivos `servicios.json` y `dockers.json` de la misma carpeta en la que están ubicados. Asegúrate de que estos archivos estén en la carpeta `scripts` y de que sus nombres coincidan con los esperados. Si decides cambiar el nombre o la ubicación de estos archivos, edita los scripts para reflejar dichos cambios.
+### Ubicación de los JSON
+- Los scripts leen los archivos `servicios.json` y `dockers.json` de las rutas absolutas especificadas:
+  - `servicios.json`: `/home/usuario/tfg/scripts/servicios.json`
+  - `dockers.json`: `/home/usuario/tfg/scripts/dockers.json`
+- Nota: Los scripts deben contener las rutas absolutas a los archivos JSON. Si cambias su ubicación o nombre, actualiza las rutas en los scripts.
 
-3. **Personalización de las métricas**:
-   - Si necesitas cambiar las métricas recopiladas o el formato, puedes modificar los scripts Python. Sin embargo, con la estructura actual, solo necesitas actualizar los JSON para añadir nuevos servicios o contenedores.
+### Personalización de las métricas
+- Si necesitas cambiar las métricas recopiladas o el formato, puedes modificar los scripts Python.
+- Con la estructura actual, solo necesitas actualizar los archivos JSON para añadir nuevos servicios o contenedores.
 
-4. **Intervalo de ejecución**:
-   - El intervalo (`interval = "30s"`) puede ajustarse según tus necesidades. Un intervalo más corto permite detectar problemas más rápidamente, pero aumenta la carga del sistema.
+### Intervalo de ejecución
+- El intervalo (`interval = "30s"`) puede ajustarse según tus necesidades.
+- Nota: Intervalos más cortos permiten detectar problemas rápidamente, pero incrementan la carga del sistema.
+
 
 ---
 
