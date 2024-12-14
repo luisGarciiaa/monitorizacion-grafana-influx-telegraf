@@ -2,49 +2,57 @@
 ---
 # Índice de la Guía de Configuración del Sistema de Monitorización
 
-1. **Introducción**
+1. Introducción
    - Descripción general del sistema
    - Componentes principales: InfluxDB, Telegraf, Grafana
 
-2. **Instalación y Configuración de InfluxDB**
+2. Instalación y Configuración de InfluxDB
    - Requisitos
    - Pasos de instalación
    - Configuración inicial
    - Configuración avanzada (retención de datos, tokens, etc.)
 
-3. **Instalación y Configuración de Telegraf**
+3. Instalación y Configuración de Telegraf
    - Requisitos
    - Pasos de instalación
    - Configuración de entradas (`inputs`)
-     - Monitorización básica (CPU, memoria, disco)
-     - Monitorización de servicios web
-     - Monitorización de contenedores Docker
+      - Monitorización básica (CPU, memoria, disco)
+      - Monitorización de servicios web y contenedores Docker con JSON
    - Configuración de salidas (`outputs`)
    - Ejecución y verificación de Telegraf
    - Configuración de Telegraf como servicio
 
-4. **Instalación y Configuración de Grafana**
+4. Instalación y Configuración de Grafana
    - Requisitos
    - Pasos de instalación
    - Configuración inicial
    - Configuración de notificaciones por correo
    - Importación de dashboards predefinidos
+      - Revisión del bucket y fuente de datos
 
-5. **Creación y Configuración de Dashboards**
-   - **Definición del Dashboard de Servidores**
-     - Descripción del propósito
-     - Métricas mostradas
-     - Configuración de consultas en Grafana
-   - **Definición del Dashboard de Servicios**
-     - Descripción del propósito
-     - Métricas mostradas
-     - Configuración de consultas en Grafana
+5. Creación y Configuración de Dashboards
+   - Definición del Dashboard de Servidores
+      - Descripción del propósito
+      - Métricas mostradas
+      - Configuración de consultas en Grafana
+   - Definición del Dashboard de Servicios
+      - Descripción del propósito
+      - Métricas mostradas
+      - Configuración de consultas en Grafana
 
-6. **Añadir Nuevos Servidores o Servicios**
+6. Añadir Nuevos Servidores o Servicios
    - Añadir un nuevo servidor
-   - Añadir un nuevo servicio
-     - Monitorización de servicios web
-     - Monitorización de contenedores Docker
+   - Añadir un nuevo servicio o contenedor Docker
+      - Monitorización de servicios web (URLs)
+      - Monitorización de contenedores Docker
+
+7. Configuración de Alertas en Grafana
+   - Crear un canal de notificación
+   - Configurar la carpeta de alertas
+   - Importar el archivo JSON de alertas
+   - Verificar las alertas
+   - Recomendaciones adicionales
+
 
 
 ---
@@ -424,7 +432,7 @@ Para una configuración adecuada, vamos a dividir los parámetros en dos seccion
 
 # Parámetros de Entrada (`[[inputs]]`)
 
-Los parámetros de entrada (`inputs`) son responsables de recoger las métricas que queremos monitorizar. En este documento, explicaremos cómo configurar tanto los plugins predefinidos como los personalizados (como `http_response` y `exec`).
+Los parámetros de entrada (`inputs`) son responsables de recoger las métricas que queremos monitorizar. En este documento, explicaremos cómo configurar tanto los plugins predefinidos como los personalizados (como `exec` para servicios web y contenedores Docker).
 
 ---
 
@@ -435,26 +443,72 @@ Usa el siguiente atajo en `nano` para localizar rápidamente la sección `[[inpu
 ```bash
 Ctrl + W y escribe [[inputs
 ```
+
+---
+
 ## 2. Configurar los plugins predefinidos
 
-Al generar el archivo `telegraf.conf`, los plugins de entrada básicos como `cpu`, `mem` y `disk` ya están definidos. Puedes revisarlos pero no hace falta modificarlos en principio.
+Al generar el archivo `telegraf.conf`, los plugins de entrada básicos como `cpu`, `mem` y `disk` ya están definidos. No es necesario modificar estos plugins para el monitoreo general del sistema. Puedes verificar que están habilitados y configurados correctamente revisando las siguientes secciones:
 
+```ini
+[[inputs.cpu]]
+  percpu = true
+  totalcpu = true
+  collect_cpu_time = false
+  report_active = false
+
+[[inputs.mem]]
+  fieldpass = ["used_percent"]
+
+[[inputs.disk]]
+  ignore_fs = ["tmpfs", "devtmpfs", "overlay"]
+```
+
+---
 
 ## 3. Configurar los plugins personalizados
 
-Para monitorizar respuestas HTTP o ejecutar scripts específicos, debemos configurar los plugins `exec`. exec lo usaremos para obtener la informacion de los servicios que necesitamos monitorear, tanto url como docker.
+Para monitorizar servicios web y contenedores Docker, debemos configurar el plugin `exec`. Este ejecutará los scripts de Python encargados de leer los datos desde los archivos JSON (`servicios.json` y `dockers.json`). Estos scripts están disponibles en la carpeta `scripts` del repositorio.
 
-La configuración de nuevos servicios (como URLs) o contenedores Docker para monitorización requiere crear scripts personalizados y configurarlos en Telegraf. 
+### Configuración del plugin `exec`
 
-#### Pasos Resumidos:
-1. **Crea un script Python** para recolectar métricas del servicio o contenedor.
-2. **Añade el script como un plugin `exec` en el archivo `telegraf.conf`**, especificando la ruta al script, el intervalo de ejecución y el formato de datos.
-3. **Verifica la configuración** ejecutando Telegraf y comprobando las métricas en InfluxDB.
+Añade las siguientes configuraciones a la sección `[[inputs]]` de tu archivo `telegraf.conf`:
 
-#### Más Información
-Para una guía detallada, Consulta la sección [6. Añadir un Nuevo Servidor o Servicio al Sistema de Monitorización](#6-añadir-un-nuevo-servidor-o-servicio-al-sistema-de-monitorización) para más detalles.
- en este manual. Allí encontrarás plantillas de scripts, ejemplos y una explicación completa sobre cómo realizar esta configuración.
+```ini
+[[inputs.exec]]
+  commands = ["python3 /ruta/completa/a/scripts/servicios.py"]  # Ejecuta el script para servicios web
+  interval = "30s"  # Ejecuta el script cada 30 segundos
+  timeout = "10s"  # Tiempo máximo permitido para que el script se ejecute
+  data_format = "influx"  # Formato esperado de los datos generados
+  name_override = "servicio_gen"  # Nombre base de la medición en InfluxDB
 
+[[inputs.exec]]
+  commands = ["python3 /ruta/completa/a/scripts/dockers.py"]  # Ejecuta el script para contenedores Docker
+  interval = "30s"  # Ejecuta el script cada 30 segundos
+  timeout = "10s"  # Tiempo máximo permitido para que el script se ejecute
+  data_format = "influx"  # Formato esperado de los datos generados
+  name_override = "docker_gen"  # Nombre base de la medición en InfluxDB
+```
+
+### Notas sobre la configuración
+
+1. **Ruta completa a los scripts**:
+   - Asegúrate de especificar la ruta completa a los scripts `servicios.py` y `dockers.py`. Por ejemplo:
+     ```bash
+     /home/usuario/tfg/scripts/servicios.py
+     /home/usuario/tfg/scripts/dockers.py
+     ```
+
+2. **Ubicación de los JSON**:
+   - Los scripts leen los archivos `servicios.json` y `dockers.json` de la misma carpeta en la que están ubicados. Asegúrate de que estos archivos estén en la carpeta `scripts` y de que sus nombres coincidan con los esperados. Si decides cambiar el nombre o la ubicación de estos archivos, edita los scripts para reflejar dichos cambios.
+
+3. **Personalización de las métricas**:
+   - Si necesitas cambiar las métricas recopiladas o el formato, puedes modificar los scripts Python. Sin embargo, con la estructura actual, solo necesitas actualizar los JSON para añadir nuevos servicios o contenedores.
+
+4. **Intervalo de ejecución**:
+   - El intervalo (`interval = "30s"`) puede ajustarse según tus necesidades. Un intervalo más corto permite detectar problemas más rápidamente, pero aumenta la carga del sistema.
+
+---
 
 
 ## 4. Ejecutar Telegraf
@@ -744,6 +798,9 @@ Después de configurar Grafana y conectar las fuentes de datos, el siguiente pas
 
 ### Notas Adicionales
 
+- **Revisión del Bucket:**
+  - El bucket predeterminado configurado en las consultas del dashboard es "DatosPrueba". Si tu bucket tiene un nombre diferente, debes modificarlo en las consultas de cada panel del dashboard para reflejar el nombre de tu bucket.
+
 - **Dónde Encontrar Dashboards JSON**:
   - Puedes encontrar el dashboard en github/dashboards
   
@@ -755,140 +812,167 @@ Después de configurar Grafana y conectar las fuentes de datos, el siguiente pas
 # 6. Añadir un Nuevo Servidor o Servicio al Sistema de Monitorización
 
 ## 1. Añadir un Nuevo Servidor
-Para añadir un nuevo servidor al sistema de monitorización, únicamente debes instalar y configurar **Telegraf** en el servidor que desees monitorizar. Asegúrate de que Telegraf esté configurado para enviar las métricas a la base de datos InfluxDB. Esto es posible porque los dashboards de Grafana permiten seleccionar cualquier servidor configurado en la base de datos.
+Añadir un nuevo servidor al sistema de monitorización ahora es un proceso sencillo. Solo necesitas configurar **Telegraf** en el servidor y asegurarte de que envíe las métricas al bucket de **InfluxDB**. Los dashboards de Grafana ya están preparados para reconocer y mostrar los datos de cualquier servidor configurado en la base de datos.
 
-Sigue estos pasos:
-1. Instala **Telegraf** en el nuevo servidor.
-2. Configura el archivo `telegraf.conf` para que envíe las métricas relevantes a la base de datos InfluxDB.
-3. Verifica que los datos estén llegando correctamente a la base de datos.
-
-Para más detalles, consulta la sección de configuración de **Telegraf** en este manual.
+Pasos:
+1. Instala **Telegraf** en el nuevo servidor siguiendo la guía de instalación.
+2. Configura `telegraf.conf` con las métricas básicas (CPU, memoria, disco).
+3. Verifica que los datos se están enviando correctamente al bucket de **InfluxDB**.
 
 ---
 
-## 2. Añadir un Nuevo Servicio
-### Opciones de Servicios:
-- **Servicios Web (URLs)**
-- **Contenedores Docker**
+## 2. Añadir un Nuevo Servicio o Contenedor Docker
 
-El proceso para añadir un nuevo servicio depende de si deseas monitorizar un servicio web o un contenedor Docker. A continuación, se detalla cómo hacerlo.
+Con el sistema actualizado, ya no es necesario crear scripts individuales o modificar configuraciones complejas. Ahora, simplemente edita los archivos JSON en la carpeta `scripts` para añadir nuevos servicios o contenedores Docker.
 
 ### 2.1 Monitorización de Servicios Web (URLs)
-1. Crea un nuevo archivo Python en la carpeta de scripts del sistema, siguiendo esta plantilla(Github:scripts/mensaje3.py):
 
-```python
-import requests
+1. **Editar el archivo `servicios.json`**:
+   - Abre el archivo en la carpeta `scripts`.
+   - Añade una nueva entrada con los siguientes campos:
+     ```json
+     {
+       "url": "http://example.com",
+       "nombre": "mi_servicio",
+       "keywords": "frontend,api,web"
+     }
+     ```
 
-# Define la URL del servicio
-url = "http://localhost:27017/"
-# Define un alias descriptivo para el servicio
-alias="mongodb"
-# Define las palabras clave asociadas al servicio
-keywords = "backend\,webserver\,real"
+2. **Campos requeridos**:
+   - **`url`**: La dirección del servicio web a monitorizar.
+   - **`nombre`**: Un identificador único y descriptivo para el servicio.
+   - **`keywords`**: Palabras clave asociadas para facilitar los filtros en Grafana.
 
-try:
-    response = requests.get(url, timeout=2)
-    if response.status_code == 200:
-        print(f"http_response,url={url},source=url,nombre=\"{alias}\",keywords=\"{keywords}\" status_code=200,message=\"OK\"")
-    else:
-        # Almacena el contenido de la respuesta en caso de error
-        error_message = response.text.replace('"', '\\"')  # Escapa comillas en el mensaje
-        print(f"http_response,url={url},source=url,nombre=\"{alias}\",keywords=\"{keywords}\" status_code={response.status_code},message=\"{error_message}\"")
-except requests.exceptions.Timeout:
-    print(f"http_response,url={url},source=url,nombre=\"{alias}\",keywords=\"{keywords}\" status_code=408,message=\"Timeout\"")
-except requests.exceptions.RequestException as e:
-    # Almacena el mensaje de error en caso de que haya una excepción en la solicitud
-    error_message = str(e).replace('"', '\\"')  # Escapa comillas en el mensaje
-    print(f"http_response,url={url},source=url,nombre=\"{alias}\",keywords=\"{keywords}\" status_code=500,message=\"{error_message}\"")
+3. **Guardar los cambios**:
+   - Guarda el archivo. Telegraf procesará automáticamente el nuevo servicio.
 
+---
 
-```
+### 2.2 Monitorización de Contenedores Docker
 
-### Modificación de Variables y Configuración
+1. **Editar el archivo `dockers.json`**:
+   - Abre el archivo en la carpeta `scripts`.
+   - Añade una nueva entrada con los siguientes campos:
+     ```json
+     {
+       "nombre": "mi_contenedor",
+       "alias": "mi_contenedor_alias",
+       "keywords": "backend,database,docker"
+     }
+     ```
 
-#### **Monitorización de Servicios Web**
+2. **Campos requeridos**:
+   - **`nombre`**: El nombre del contenedor Docker que deseas monitorizar.
+   - **`alias`**: Un identificador único y descriptivo para el contenedor.
+   - **`keywords`**: Palabras clave asociadas para facilitar los filtros en Grafana.
 
-1. **Modifica las variables en la plantilla**:
-   - **`url`**: Especifica la URL del servicio a monitorizar.
-   - **`alias`**: Asigna un nombre descriptivo al servicio.
-   - **`keywords`**: Define las palabras clave asociadas al servicio para facilitar los filtros en Grafana.
+3. **Guardar los cambios**:
+   - Guarda el archivo. Telegraf procesará automáticamente el nuevo contenedor.
 
-2. **Añade el script al archivo de configuración de Telegraf (`telegraf.conf`) como un plugin exec**:
-   ```ini
-   [[inputs.exec]]
-     commands = ["python3 /ruta/al/script.py"]  # Comando que se ejecutará periódicamente (asegúrate de que la ruta al script sea correcta).
-     interval = "30s"  # Intervalo de ejecución del script (cada 30 segundos en este caso).
-     timeout = "10s"  # Tiempo máximo permitido para que el script se ejecute antes de interrumpirlo.
-     data_format = "influx"  # Formato esperado para los datos generados (InfluxDB en este caso).
-     name_override = "http_response"  # Nombre base de la medición almacenada en la base de datos.
+---
 
-     [inputs.exec.tags]
-       url = "https://example.com"  # URL del servicio que se está monitorizando.
-   ```
-### Monitorización de Contenedores Docker
+### Beneficios del Nuevo Enfoque
 
-1. **Crea un nuevo archivo Python en la carpeta de scripts del sistema**:
-   Utiliza la siguiente plantilla:(Github:scripts/docker1.py):
+- **Simplificación**: Ya no es necesario crear scripts personalizados para cada servicio o contenedor.
+- **Flexibilidad**: Los servicios y contenedores se configuran en un solo lugar (los archivos JSON).
+- **Automatización**: Telegraf detectará y procesará automáticamente las nuevas entradas sin necesidad de reiniciar.
 
-   ```python
-   import docker
-   
-   #Define el nombre del contenedor
-   target_container_name = "mongodb"
-   #Define un alias descriptivo para el contenedor
-   alias = "mongodb"
-   #Define las palabras clave asociadas al contenedor
-   keywords = "docker\,real\,mongodb"
-   
-   try:
-       # Conecta al cliente Docker
-       client = docker.DockerClient(base_url='unix://var/run/docker.sock')
-   
-       # Intenta obtener el contenedor por su nombre
-       container = client.containers.get(target_container_name)
-       container_status = container.status
-   
-       if container_status == "running":
-           print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=200,message=\"OK\"")
-       else:
-           print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=500,message=\"{container_status}\"")
-   
-   except docker.errors.NotFound:
-       # Si no se encuentra el contenedor
-       print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=404,message=\"Not Found\"")
-   
-   except docker.errors.DockerException as e:
-       # Manejo de errores generales de Docker
-       error_message = str(e).replace('"', '\\"')  # Escapa comillas en el mensaje
-       print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=500,message=\"{error_message}\"")
-
-   ```
-   
-   ### Modifica las variables en la plantilla
-
-1. **Variables**:
-   - **`target_container_name`**: Especifica el nombre del contenedor Docker a monitorizar.
-   - **`alias`**: Asigna un nombre descriptivo al contenedor.
-   - **`keywords`**: Define las palabras clave asociadas al contenedor.
-
-2. **Configuración en Telegraf**:
-   Añade el script al archivo de configuración de Telegraf (`telegraf.conf`) como un plugin `exec`:
-
-   ```ini
-   [[inputs.exec]]
-     commands = ["python3 /ruta/al/script_docker.py"]  # Comando para ejecutar el script de monitorización del contenedor Docker.
-     interval = "30s"  # Intervalo de ejecución del script (cada 30 segundos).
-     timeout = "10s"  # Tiempo máximo permitido para que el script se ejecute antes de interrumpirlo.
-     data_format = "influx"  # Formato esperado para los datos generados (InfluxDB en este caso).
-     name_override = "http_response"  # Nombre base de la medición almacenada en la base de datos.
-
-     [inputs.exec.tags]
-       url = "docker"  # Etiqueta que indica que los datos provienen de un contenedor Docker.
-
-   ```
+---
   
 
 
+# 7. Configuración de Alertas en Grafana
+
+Este apartado explica cómo configurar las alertas de Grafana utilizando el archivo JSON proporcionado. Estas alertas están diseñadas para funcionar específicamente con los recursos y servicios configurados en pasos anteriores de este manual, como los dashboards de CPU, memoria, disco, servicios web y contenedores Docker.
+
+---
+
+## Pasos para Configurar las Alertas
+
+### 1. Crear un Canal de Notificación
+Para que Grafana pueda enviar alertas, debes configurar un canal de notificación.
+
+1. **Acceder a la Configuración de Notificaciones**:
+   - Ve a la interfaz de Grafana.
+   - Navega a **Alerting** > **Notification Channels**.
+
+2. **Crear un Nuevo Canal**:
+   - Haz clic en **Add channel**.
+   - Configura el canal con los siguientes parámetros:
+     - **Name**: Un nombre descriptivo como `Grafana Alerts`.
+     - **Type**: Selecciona el tipo de notificación (correo electrónico, Slack, etc.).
+     - **Receiver**: Configura el receptor, como una dirección de correo o una URL de webhook.
+
+3. **Guardar el Canal**:
+   - Asegúrate de que el canal de notificación se llama `grafana-default-email` o actualiza el JSON si utilizas otro nombre.
+
+---
+
+### 2. Configurar la Carpeta de Alertas
+
+Las alertas deben estar asociadas a una carpeta para organizarlas y definir su intervalo de ejecución.
+
+1. **Crear una Carpeta**:
+   - Ve a **Alerting** > **Folders**.
+   - Crea una nueva carpeta llamada `Alertas` (o utiliza un nombre que prefieras, pero recuerda actualizarlo en el JSON).
+
+2. **Definir el Intervalo de Ejecución**:
+   - Asegúrate de que el intervalo de ejecución configurado en la carpeta coincide con el valor definido en el JSON (`"interval": "1m"`).
+
+---
+
+### 3. Importar el Archivo JSON de Alertas
+
+1. **Ubicación del Archivo**:
+   - El archivo JSON se encuentra en la carpeta `alertas` del repositorio. El archivo contiene las alertas predefinidas para CPU, memoria, disco, servicios y contenedores Docker.
+
+2. **Modificar el Archivo JSON**:
+   - Abre el archivo JSON y ajusta las siguientes configuraciones:
+     - **Bucket**: Reemplaza `"DatosPrueba"` con el nombre del bucket utilizado en tu InfluxDB.
+     - **Datasource UID**: Asegúrate de que el `datasourceUid` (`"fe2r5unjgi3uoa"`) coincide con el UID de tu fuente de datos en Grafana.
+     - **Notification Receiver**: Si configuraste un canal de notificación con un nombre diferente a `grafana-default-email`, actualiza este valor.
+
+3. **Importar el JSON**:
+   - En Grafana, ve a **Alerting** > **Import JSON**.
+   - Sube el archivo JSON modificado y verifica que las alertas se hayan creado correctamente.
+
+---
+
+### 4. Verificar las Alertas
+
+1. **Probar el Canal de Notificación**:
+   - Desde la configuración del canal de notificación, envía un mensaje de prueba para asegurarte de que funciona correctamente.
+
+2. **Activar una Alerta Manualmente**:
+   - Simula una condición de alerta (por ejemplo, aumenta el uso de CPU o llena un disco) y verifica que la alerta se active.
+
+3. **Revisar el Historial de Alertas**:
+   - Navega a **Alerting** > **Alert Rules** para ver el estado de cada alerta y asegurarte de que están activas y funcionando.
+
+---
+
+## Recomendaciones
+
+- **Modificación del Bucket**:
+  Si cambias el bucket en el archivo JSON, verifica que las consultas Flux para cada alerta funcionen correctamente.
+
+- **Revisión del Datasource UID**:
+  El UID de la fuente de datos puede variar entre instalaciones. Para obtener el UID de tu datasource:
+  - Ve a **Configuration** > **Data Sources**.
+  - Selecciona tu fuente de datos y copia el UID.
+
+- **Organización de las Alertas**:
+  Agrupa las alertas en carpetas por tipo (por ejemplo, `CPU`, `Memoria`, `Servicios`) para facilitar su gestión.
+
+---
+
+## Archivos Relacionados
+
+- **JSON de Alertas**: Ubicado en la carpeta `alertas/alertas.json`.
+
+---
+
+Con esta configuración, tus alertas estarán listas para monitorear los recursos y servicios definidos en tu sistema. Si necesitas ajustar algún parámetro, recuerda modificar el archivo JSON y volver a importarlo.
 
 
 
