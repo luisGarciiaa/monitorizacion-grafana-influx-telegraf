@@ -1,0 +1,18 @@
+[
+    {
+      "url": "https://httpstat.us/500",
+      "alias": "prueba/500",
+      "keywords": "frontend"
+    },
+    {
+        "url": "https://httpstat.us/403",
+        "alias": "prueba/403",
+        "keywords": "api"
+    },
+    {
+        "url": "http://localhost:27017/",
+        "alias": "mongodb",
+        "keywords": "mongodb"
+      }
+  ]
+  
