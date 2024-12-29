@@ -1,61 +1,78 @@
 # Guía de Instalación y Configuración del Sistema de Monitorización (Influxdb_v2, Telegraf y Grafana)
+
+
 ---
+
 # Índice de la Guía de Configuración del Sistema de Monitorización
 
-1. Introducción
-   - Descripción general del sistema
-   - Componentes principales: InfluxDB, Telegraf, Grafana
+1. Introducción  
+   - Descripción general del sistema  
+   - Componentes principales: InfluxDB, Telegraf, Grafana  
 
-2. Instalación y Configuración de InfluxDB
-   - Requisitos
-   - Pasos de instalación
-   - Configuración inicial
-   - Configuración avanzada (retención de datos, tokens, etc.)
+2. Instalación y Configuración de InfluxDB  
+   - Requisitos  
+   - Pasos de instalación  
+   - Configuración inicial  
+   - Configuración avanzada (retención de datos, tokens, etc.)  
 
-3. Instalación y Configuración de Telegraf
-   - Requisitos
-   - Pasos de instalación
-   - Configuración de entradas (`inputs`)
-      - Monitorización básica (CPU, memoria, disco)
-      - Monitorización de servicios web y contenedores Docker con JSON
-   - Configuración de salidas (`outputs`)
-   - Ejecución y verificación de Telegraf
-   - Configuración de Telegraf como servicio
+3. Instalación y Configuración de Telegraf  
+   - Requisitos  
+   - Pasos de instalación  
+   - Configuración de entradas (`inputs`)  
+      - Monitorización básica (CPU, memoria, disco)  
+      - Monitorización de servicios web y contenedores Docker con JSON  
+   - Configuración de salidas (`outputs`)  
+   - Ejecución y verificación de Telegraf  
+   - Configuración de Telegraf como servicio  
 
-4. Instalación y Configuración de Grafana
-   - Requisitos
-   - Pasos de instalación
-   - Configuración inicial
-   - Configuración de notificaciones por correo
-   - Importación de dashboards predefinidos
-      - Revisión del bucket y fuente de datos
+4. Instalación y Configuración de Grafana  
+   - Requisitos  
+   - Pasos de instalación  
+   - Configuración inicial  
+   - Configuración de notificaciones por correo  
+   - Importación de dashboards predefinidos  
+      - Revisión del bucket y fuente de datos  
 
-5. Creación y Configuración de Dashboards
-   - Definición del Dashboard de Servidores
-      - Descripción del propósito
-      - Métricas mostradas
-      - Configuración de consultas en Grafana
-   - Definición del Dashboard de Servicios
-      - Descripción del propósito
-      - Métricas mostradas
-      - Configuración de consultas en Grafana
+5. Creación y Configuración de Dashboards  
+   - Definición del Dashboard de Servidores  
+      - Descripción del propósito  
+      - Métricas mostradas  
+      - Configuración de consultas en Grafana  
+   - Definición del Dashboard de Servicios  
+      - Descripción del propósito  
+      - Métricas mostradas  
+      - Configuración de consultas en Grafana  
 
-6. Añadir Nuevos Servidores o Servicios
-   - Añadir un nuevo servidor
-   - Añadir un nuevo servicio o contenedor Docker
-      - Monitorización de servicios web (URLs)
-      - Monitorización de contenedores Docker
+6. Añadir Nuevos Servidores o Servicios  
+   - Añadir un nuevo servidor  
+   - Añadir un nuevo servicio o contenedor Docker  
+      - Monitorización de servicios web (URLs)  
+      - Monitorización de contenedores Docker  
 
-7. Configuración de Alertas en Grafana
-   - Crear un canal de notificación
-   - Configurar la carpeta de alertas
-   - Importar el archivo JSON de alertas
-   - Verificar las alertas
-   - Recomendaciones adicionales
+7. Configuración de Alertas en Grafana  
+   - Introducción a las alertas  
+   - Configuración inicial  
+      - Crear una carpeta para las alertas  
+      - Configurar un canal de notificación  
+   - Personalización de las alertas  
+      - Duplicar y personalizar una alerta  
+      - Configurar el comportamiento de evaluación  
+      - Añadir canales de notificación  
+   - Mini Guía por Tipo de Alerta  
+      - Alertas de CPU  
+      - Alertas de memoria  
+      - Alertas de disco  
+      - Alertas de servicios  
+         - Configuración de filtros por URL, nombre, palabras clave  
+         - Ajustes para alertar por `status_code != 200`  
+      - Alertas de contenedores Docker  
+         - Configuración de filtros por nombre, palabras clave  
+         - Ajustes para alertar por `status_code != 200`  
+   - Verificación y pruebas de las alertas  
+   - Recomendaciones adicionales  
 
 
 
----
 ---
 # 1. Introducción
 
@@ -893,100 +910,218 @@ Con el sistema actualizado, ya no es necesario crear scripts individuales o modi
 
 # 7. Configuración de Alertas en Grafana
 
-Este apartado explica cómo configurar las alertas de Grafana utilizando el archivo JSON proporcionado. Estas alertas están diseñadas para funcionar específicamente con los recursos y servicios configurados en pasos anteriores de este manual, como los dashboards de CPU, memoria, disco, servicios web y contenedores Docker.
+En este apartado podras configurar y gestionar alertas en Grafana, personalizando alarmas ejemplo para que se adapten a tus necesidades específicas. Podrás configurar alertas que te avisen a tu correo cuando un umbral definido sea superado, ya sea para CPU, memoria, disco,  servicios o Docker.
+
+Esta guía está dividida en pasos: la configuración inicial, personalización de alertas y ajuste de variables según el panel. Esto te permitirá gestionar tus propias alertas sin complicaciones.
 
 ---
 
-## Pasos para Configurar las Alertas
+## Configuración Inicial
+Esta configuracion se debe hacer para configurar las alertas de grafana por primera vez.
 
-### 1. Crear un Canal de Notificación
-Para que Grafana pueda enviar alertas, debes configurar un canal de notificación.
+### 1. Crear una Carpeta para las Alertas
 
-1. **Acceder a la Configuración de Notificaciones**:
-   - Ve a la interfaz de Grafana.
-   - Navega a **Alerting** > **Notification Channels**.
+Si aún no tienes carpetas configuradas en Grafana, sigue estos pasos:
 
-2. **Crear un Nuevo Canal**:
-   - Haz clic en **Add channel**.
-   - Configura el canal con los siguientes parámetros:
-     - **Name**: Un nombre descriptivo como `Grafana Alerts`.
-     - **Type**: Selecciona el tipo de notificación (correo electrónico, Slack, etc.).
-     - **Receiver**: Configura el receptor, como una dirección de correo o una URL de webhook.
+1. Ve a **Alerting** > **Alert rules**.
+2. Haz clic en **New alert rule** (arriba a la derecha).
+3. En la sección "3. Set evaluation behavior", selecciona "Create new folder".
+4. Asigna un nombre a la carpeta (por ejemplo, `Alertas`).
+5. Define un intervalo de evaluación común (por ejemplo, `1m`) para que las alertas que entren en esta carpeta se evalúuen cada minuto.
+6. Guarda los cambios.
 
-3. **Guardar el Canal**:
-   - Asegúrate de que el canal de notificación se llama `grafana-default-email` o actualiza el JSON si utilizas otro nombre.
+
 
 ---
 
-### 2. Configurar la Carpeta de Alertas
+### 2. Configurar un Canal de Notificación
+Si todavia no tienes un canal de notificacion, por ejemplo un correo electronico al cual enviar las alertas, debes configurarlo:
 
-Las alertas deben estar asociadas a una carpeta para organizarlas y definir su intervalo de ejecución.
-
-1. **Crear una Carpeta**:
-   - Ve a **Alerting** > **Folders**.
-   - Crea una nueva carpeta llamada `Alertas` (o utiliza un nombre que prefieras, pero recuerda actualizarlo en el JSON).
-
-2. **Definir el Intervalo de Ejecución**:
-   - Asegúrate de que el intervalo de ejecución configurado en la carpeta coincide con el valor definido en el JSON (`"interval": "1m"`).
-
----
-
-### 3. Importar el Archivo JSON de Alertas
-
-1. **Ubicación del Archivo**:
-   - El archivo JSON se encuentra en la carpeta `alertas` del repositorio. El archivo contiene las alertas predefinidas para CPU, memoria, disco, servicios y contenedores Docker.
-
-2. **Modificar el Archivo JSON**:
-   - Abre el archivo JSON y ajusta las siguientes configuraciones:
-     - **Bucket**: Reemplaza `"DatosPrueba"` con el nombre del bucket utilizado en tu InfluxDB.
-     - **Datasource UID**: Asegúrate de que el `datasourceUid` (`"fe2r5unjgi3uoa"`) coincide con el UID de tu fuente de datos en Grafana.
-     - **Notification Receiver**: Si configuraste un canal de notificación con un nombre diferente a `grafana-default-email`, actualiza este valor.
-
-3. **Importar el JSON**:
-   - En Grafana, ve a **Alerting** > **Import JSON**.
-   - Sube el archivo JSON modificado y verifica que las alertas se hayan creado correctamente.
+1. Ve a **Alerting** > **Contact points**.
+2. Haz clic en **Create contact point**.
+3. Configura el canal:
+   - **Nombre**: Usa un nombre descriptivo (por ejemplo, `correo_NombreApellidos`).
+   - **Tipo de notificación**: Selecciona el canal que desees (correo electrónico, Slack, etc.).
+   - **Dirección de correo**: Añade las direcciones que recibirán las alertas.
+4. Guarda la configuración.
 
 ---
 
-### 4. Verificar las Alertas
 
-1. **Probar el Canal de Notificación**:
-   - Desde la configuración del canal de notificación, envía un mensaje de prueba para asegurarte de que funciona correctamente.
+## Personalización de las Alertas
 
-2. **Activar una Alerta Manualmente**:
-   - Simula una condición de alerta (por ejemplo, aumenta el uso de CPU o llena un disco) y verifica que la alerta se active.
+A continuación, se explica cómo duplicar y personalizar una alerta existente. 
 
-3. **Revisar el Historial de Alertas**:
-   - Navega a **Alerting** > **Alert Rules** para ver el estado de cada alerta y asegurarte de que están activas y funcionando.
+### 1. Duplicar una Alerta
 
----
-
-## Recomendaciones
-
-- **Modificación del Bucket**:
-  Si cambias el bucket en el archivo JSON, verifica que las consultas Flux para cada alerta funcionen correctamente.
-
-- **Revisión del Datasource UID**:
-  El UID de la fuente de datos puede variar entre instalaciones. Para obtener el UID de tu datasource:
-  - Ve a **Configuration** > **Data Sources**.
-  - Selecciona tu fuente de datos y copia el UID.
-
-- **Organización de las Alertas**:
-  Agrupa las alertas en carpetas por tipo (por ejemplo, `CPU`, `Memoria`, `Servicios`) para facilitar su gestión.
+1. **Duplicar una alerta**:
+   - Ve al panel que contiene la alerta.
+   - Haz clic en el icono de ajustes del panel(tres puntitos arriba derecha) y pulsa en Edit.
+   - Ve a la sección "Alert" y selecciona "more" en la alerta ejemplo.
+   - Haz clic en el botón "Duplicate".
 
 ---
 
-## Archivos Relacionados
+### 2. Configurar la Nueva Alerta
 
-- **JSON de Alertas**: Ubicado en la carpeta `alertas/alertas.json`.
+Sigue estos pasos para configurar y personalizar la nueva alerta duplicada:
+
+1. **Asignar un Nombre Descriptivo**:
+   - En el campo **Alert rule name**, asigna un nombre claro y descriptivo (por ejemplo, `CPU > 80% - TuNombre`).
+
+2. **Definir la Consulta y la Condición de la Alerta**:
+   - Ajusta la consulta en el apartado **Query**.
+   - En el apartado **Define alert condition**, configura el umbral de la alerta.
+   - Revisa la sección "Mini Guía por Tipo de Alerta" para ajustar variables y umbrales específicos según el tipo de alerta.
+
+3. **Configurar el Comportamiento de Evaluación (Evaluation Behavior)**:
+   - **Seleccionar el Folder**: Asigna la alerta a una carpeta existente o crea una nueva si no existe.
+   - **Seleccionar el Evaluation Group**: Define el grupo de evaluación donde se procesará la alerta.
+   - **Establecer el Pending Period**: Este período es el tiempo que debe cumplirse una condición antes de activar la alerta (por ejemplo, `30s`).
+
+4. **Añadir Canales de Notificación (Contact Points)**:
+   - Selecciona uno o varios canales configurados previamente. Por ejemplo, añade tu correo electrónico o el de un equipo específico que hemos configurado en la configuraicon inicial.
+
+5. **Personalizar el Mensaje de Alerta**:
+   - Si quieres puedes añadir detalles al mensaje para que sea informativo. Por ejemplo: 
+     - `Host afectado: ${host}`
+     - `Uso de CPU: ${value}%`
+     - `Umbral superado: ${threshold}`
+
+6. **Guardar los Cambios**:
+   - Una vez configurada, guarda la alerta.
 
 ---
 
-Con esta configuración, tus alertas estarán listas para monitorear los recursos y servicios definidos en tu sistema. Si necesitas ajustar algún parámetro, recuerda modificar el archivo JSON y volver a importarlo.
+## Mini Guía por Tipo de Alerta
+
+## CPU
+- **Consulta (Query)**:
+  ```flux
+  from(bucket: "DatosPrueba")
+    |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+    |> filter(fn: (r) => r["host"] == "luisgarcia-VirtualBox") // Filtra por el host seleccionado
+    |> filter(fn: (r) => r["cpu"] == "cpu-total")
+    |> filter(fn: (r) => r["_field"] == "usage_idle")
+    |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)
+    |> map(fn: (r) => ({ r with _value: 100.0 - r._value }))
+    |> yield(name: "mean")
+  ```
+
+- **Modificaciones necesarias**:
+  1. **Bucket**: Cambia `"DatosPrueba"` por el nombre de tu bucket.
+  2. **Host**: Sustituye `"luisgarcia-VirtualBox"` por el nombre del servidor o máquina que deseas monitorizar.
+  3. **Threshold (C)**: En el apartado **Expressions**, ajusta el valor de la expresión `C` para definir el porcentaje deseado:
+     - Por ejemplo: Cambia `80` por el umbral que quieras (e.g., `70` para alertar cuando el uso de CPU supere el 70%).
 
 
+---
+
+## Memoria
+- **Consulta (Query)**:
+  ```flux
+  from(bucket: "DatosPrueba")
+    |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+    |> filter(fn: (r) => r["host"] == "luisgarcia-VirtualBox") // Filtra por el host seleccionado
+    |> filter(fn: (r) => r["_measurement"] == "mem")
+    |> filter(fn: (r) => r["_field"] == "free" or r["_field"] == "used")
+    |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)
+    |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+    |> map(fn: (r) => ({
+          _time: r._time,
+          _value: float(v: r["used"]) / (float(v: r["free"]) + float(v: r["used"])) * 100.0, // Asegura que todos los valores sean float
+          host: r.host
+        }))
+    |> yield(name: "mean")
+  ```
+
+- **Modificaciones necesarias**:
+  1. **Bucket**: Cambia `"DatosPrueba"` por el nombre de tu bucket.
+  2. **Host**: Sustituye `"luisgarcia-VirtualBox"` por el nombre de tu servidor o máquina.
+  3. **Threshold (C)**: En el apartado **Expressions**, ajusta el valor de la expresión `C` para definir el porcentaje deseado:
+     - Por ejemplo: Cambia `90` por el umbral deseado (e.g., `85` para alertar cuando el uso de memoria supere el 85%).
 
 
+---
 
+## Disco
+- **Consulta (Query)**:
+  ```flux
+  from(bucket: "DatosPrueba")
+    |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+    |> filter(fn: (r) => r["host"] == "luisgarcia-VirtualBox") // Filtra por el host seleccionado
+    |> filter(fn: (r) => r["_measurement"] == "disk")
+    |> filter(fn: (r) => r["_field"] == "used_percent") // Nos centramos solo en el porcentaje de disco usado
+    |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)
+    |> yield(name: "mean")
+  ```
+
+- **Modificaciones necesarias**:
+  1. **Bucket**: Cambia `"DatosPrueba"` por el nombre de tu bucket.
+  2. **Host**: Sustituye `"luisgarcia-VirtualBox"` por el nombre de tu servidor o máquina.
+  3. **Threshold (C)**: En el apartado **Expressions**, ajusta el valor de la expresión `C` para definir el porcentaje deseado:
+     - Por ejemplo: Cambia `85` por el umbral deseado (e.g., `90` para alertar cuando el uso del disco supere el 90%).
+
+
+---
+
+
+### **Servicios**
+- **Consulta (Query)**:
+  ```flux
+  from(bucket: "DatosPrueba")
+    |> range(start: v.timeRangeStart, stop: v.timeRangeStop) // Rango de tiempo dinámico del panel
+    |> filter(fn: (r) => r["_measurement"] == "servicio_gen") // Filtra los datos de 'servicio_gen'
+    |> filter(fn: (r) => r["_field"] == "status_code") // Filtro para los códigos de estado
+    //  |> filter(fn: (r) => r["url"] == "http://example.com" or r["url"] == "http://another-example.com" or r["url"] == "http://localhost:27017/") // Filtra por una o varias URLs
+
+    //|> filter(fn: (r) => r["nombre"] == "prueba/403") // Opcional: Filtra por el nombre del servicio
+    //|> filter(fn: (r) => r["servidor"] == "servidor_1") // Opcional: Filtra por servidor
+    //|> filter(fn: (r) => r["proyecto"] == "proyecto_B") // Opcional: Filtra por proyecto
+    //|> filter(fn: (r) => r["keywords"] == "api") // Opcional: Filtra por keywords
+    |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value") // Reestructura los datos para 'status_code'
+    |> keep(columns: ["_time", "url", "status_code"])
+  ```
+
+- **Modificaciones necesarias**:
+  1. **Bucket**: Cambia `"DatosPrueba"` por el nombre de tu bucket.
+  2. **Filtros opcionales**: Usa uno o varios filtros según tus necesidades. Tambien puedes filtrar por una lista de urls o nombres. No tiene por que ser uno solo. Por ejemplo:
+     - **Filtrar por URL**: Si quieres monitorear un servicio específico, descomenta el filtro `r["url"]`.
+     - **Filtrar por nombre del servicio**: Usa el filtro `r["nombre"]`.
+     - **Filtrar por palabras clave**: Usa `r["keywords"]` para limitar el monitoreo a servicios relevantes.
+
+- **Umbral recomendado**:
+  - Activa la alerta cuando `status_code != 200`.
+
+---
+
+### **Docker**
+- **Consulta (Query)**:
+  ```flux
+  from(bucket: "DatosPrueba")
+    |> range(start: v.timeRangeStart, stop: v.timeRangeStop) // Rango de tiempo dinámico del panel
+    |> filter(fn: (r) => r["_measurement"] == "docker_gen") // Filtra los datos de contenedores
+    |> filter(fn: (r) => r["_field"] == "status_code") // Filtro para los códigos de estado
+    //|> filter(fn: (r) => r["nombre"] == "alpine") // Opcional: Filtra por nombre del contenedor
+    //|> filter(fn: (r) => r["keywords"] == "database") // Opcional: Filtra por keywords del contenedor
+    |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value") // Reestructura los datos
+    |> keep(columns: ["_time", "nombre", "status_code"])
+  ```
+
+- **Modificaciones necesarias**:
+  1. **Bucket**: Cambia `"DatosPrueba"` por el nombre de tu bucket.
+  2. **Filtros opcionales**: Usa uno o varios filtros según el contenedor que quieras monitorear. Por ejemplo:
+     - **Filtrar por nombre del contenedor**: Usa `r["nombre"]` para enfocarte en un contenedor específico.
+     - **Filtrar por palabras clave (keywords)**: Usa `r["keywords"]` para identificar contenedores con una función específica, como `database` o `frontend`.
+
+- **Umbral recomendado**:
+  - Activa la alerta cuando `status_code != 200`.
+
+
+---
+
+## Conclusión
+
+Con esta configuración, cada usuario podrá gestionar y personalizar sus alertas en Grafana de forma sencilla. Recuerda duplicar las alertas existentes, ajustar las variables necesarias y definir los canales de notificación apropiados. Si tienes dudas, revisa las consultas proporcionadas para cada tipo de alerta y adapta los valores según tus necesidades.
 
 
