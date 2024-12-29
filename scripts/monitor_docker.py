@@ -1,8 +1,8 @@
 import docker
 import json
 
-# Ruta absoluta al archivo de configuración
-config_file = "/ruta/absoluta/a/archivodocker.json"
+# Ruta al archivo de configuración
+config_file = "/home/luisgarcia/tfg/scripts/dockers.json"
 
 try:
     # Carga la configuración
@@ -23,13 +23,13 @@ try:
             container_status = container.status
 
             if container_status == "running":
-                print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=200,message=\"OK\"")
+                print(f"http_response,nombre={alias},source=docker,keywords={keywords} ,status_code=200,message=\"OK\"")
             else:
-                print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=500,message=\"{container_status}\"")
+                print(f"http_response,nombre={alias},source=docker,keywords={keywords} status_code=500,message=\"{container_status}\"")
         except docker.errors.NotFound:
-            print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=404,message=\"Not Found\"")
+            print(f"http_response,nombre={alias},source=docker,keywords={keywords} status_code=404,message=\"Not Found\"")
         except docker.errors.DockerException as e:
             error_message = str(e).replace('"', '\\"')
-            print(f"http_response,nombre=\"{alias}\",source=docker,keywords=\"{keywords}\" status_code=500,message=\"{error_message}\"")
+            print(f"http_response,nombre={alias},source=docker,keywords={keywords} status_code=500,message=\"{error_message}\"")
 except Exception as e:
     print(f"Error al cargar el archivo de configuración: {e}")

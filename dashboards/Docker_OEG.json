@@ -474,7 +474,6 @@
     }
   ],
   "preload": false,
-  "refresh": "",
   "schemaVersion": 40,
   "tags": [],
   "templating": {
@@ -518,7 +517,7 @@
     ]
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
