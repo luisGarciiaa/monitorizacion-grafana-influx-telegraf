@@ -463,79 +463,146 @@ Ctrl + W y escribe [[inputs
 
 ---
 
-## 2. Configurar los plugins predefinidos
 
-Al generar el archivo `telegraf.conf`, los plugins de entrada básicos como `cpu`, `mem` y `disk` ya están definidos. No es necesario modificar estos plugins para el monitoreo general del sistema. Puedes verificar que están habilitados y configurados correctamente revisando las siguientes secciones:
 
-```ini
-[[inputs.cpu]]
-  percpu = true
-  totalcpu = true
-  collect_cpu_time = false
-  report_active = false
 
-[[inputs.mem]]
-  fieldpass = ["used_percent"]
+## 2. Configuracion plugins
 
-[[inputs.disk]]
-  ignore_fs = ["tmpfs", "devtmpfs", "overlay"]
-```
+Actualmente, se han definido tres dashboards principales para monitorización. Cada uno utiliza diferentes plugins de entrada (`inputs`) de Telegraf:
+
+- **Dashboard de Servidores**:  
+  Monitorea el sistema general (CPU, memoria, disco) utilizando los plugins predefinidos: `cpu`, `mem`, y `disk`.  (Si hemos puesto el comando que mencionabamos antes, estos plugins se generan solos) Puedes verificar que están habilitados y configurados correctamente revisando las siguientes secciones:
+
+
+  **Plugins requeridos**:  
+    ```ini
+    [[inputs.cpu]]
+      percpu = true
+      totalcpu = true
+      collect_cpu_time = false
+      report_active = false
+    
+    [[inputs.mem]]
+      fieldpass = ["used_percent"]
+    
+    [[inputs.disk]]
+      ignore_fs = ["tmpfs", "devtmpfs", "overlay"]
+    ```
+
+- **Dashboard de Servicios**:  
+  Permite monitorizar el estado de servicios web y contenedores Docker mediante scripts de Python (`monitor_servicio.py` y `monitor_docker.py`).  
+  **Plugins requeridos**:  
+  ```ini
+  [[inputs.exec]]  # Configurado para servicios
+  [[inputs.exec]]  # Configurado para contenedores Docker mediante script
+  ```
+
+- **Dashboard Técnico de Docker**:  
+  Proporciona información técnica y detallada sobre el consumo de recursos de los contenedores Docker (CPU, memoria, red y disco). No requiere scripts de Python.  
+  **Plugin requerido**:  
+  ```ini
+  [[inputs.docker]]
+  ```
 
 ---
 
-## 3. Configurar los plugins personalizados
+## 2. Configuración del Plugin `[[inputs.docker]]`
 
-Para monitorizar servicios web y contenedores Docker, debemos configurar el plugin `exec`. Este ejecutará los scripts de Python encargados de leer los datos desde los archivos JSON (`servicios.json` y `dockers.json`). Estos scripts están disponibles en la carpeta `scripts` del repositorio.
+Para el **Dashboard Técnico de Docker**, es necesario habilitar el plugin `docker` en el archivo `telegraf.conf`. Este plugin recopila métricas directamente del socket de Docker sin necesidad de scripts adicionales.
 
-### Configuración del plugin `exec`
+### Configuración:
 
-Añade las siguientes configuraciones a la sección `[[inputs]]` de tu archivo `telegraf.conf`:
+```ini
+[[inputs.docker]]
+  endpoint = "unix:///var/run/docker.sock"  # Ruta al socket de Docker
+  gather_services = false
+  container_state_include = ["running", "paused", "exited"]  # Incluye estados de contenedores específicos
+  interval = "5s"  # Intervalo de recolección de datos
+  timeout = "5s"  # Tiempo máximo para obtener los datos
+  container_name_include = []  # Opcional: especifica contenedores a incluir
+  container_name_exclude = []  # Opcional: especifica contenedores a excluir
+```
+
+### Notas:
+- Asegúrate de que el usuario que ejecuta Telegraf tiene permisos para acceder al socket de Docker (`/var/run/docker.sock`). Puedes configurarlo así:  
+  ```bash
+  sudo usermod -aG docker telegraf
+  ```
+
+---
+
+## 3. Relación entre Dashboards y Plugins
+
+| Dashboard               | Plugins Utilizados                                          | Detalles                                                    |
+|--------------------------|------------------------------------------------------------|------------------------------------------------------------|
+| **Servidores**           | `cpu`, `mem`, `disk`                                       | No requiere configuración adicional.                       |
+| **Servicios**            | `exec` (servicios y contenedores mediante scripts)         | Usa los scripts `monitor_servicio.py` y `monitor_docker.py`.|
+| **Técnico de Docker**    | `docker`                                                   | Recopila métricas de contenedores directamente de Docker.   |
+
+---
+
+## 4. Configuración General de los Plugins `exec`
+
+### Configuración del plugin `exec` para el Dashboard de Servicios:
 
 ```ini
 [[inputs.exec]]
-  commands = ["python3 /ruta/completa/a/scripts/monitor_servicio.py"]  # Ejecuta el script para servicios web
-  interval = "30s"  # Ejecuta el script cada 30 segundos
-  timeout = "10s"  # Tiempo máximo permitido para que el script se ejecute
-  data_format = "influx"  # Formato esperado de los datos generados
-  name_override = "servicio_gen"  # Nombre base de la medición en InfluxDB
+  commands = ["python3 /ruta/completa/a/scripts/monitor_servicio.py"]  # Script para servicios web
+  interval = "30s"  # Intervalo de ejecución
+  timeout = "10s"  # Tiempo máximo permitido
+  data_format = "influx"  # Formato de los datos
+  name_override = "servicio_gen"  # Nombre de la medición
   [inputs.exec.tags]
     url = "servicio_general"
-    
+
 [[inputs.exec]]
-  commands = ["python3 /ruta/completa/a/scripts/monitor_docker.py"]  # Ejecuta el script para contenedores Docker
-  interval = "30s"  # Ejecuta el script cada 30 segundos
-  timeout = "10s"  # Tiempo máximo permitido para que el script se ejecute
-  data_format = "influx"  # Formato esperado de los datos generados
-  name_override = "docker_gen"  # Nombre base de la medición en InfluxDB
+  commands = ["python3 /ruta/completa/a/scripts/monitor_docker.py"]  # Script para contenedores Docker
+  interval = "30s"
+  timeout = "10s"
+  data_format = "influx"
+  name_override = "docker_gen"
   [inputs.exec.tags]
     url = "docker_general"
 ```
 
-# Notas sobre la configuración
+### Configuración de Archivos JSON y Scripts
+- **JSON utilizados**:
+  - `servicios.json` y `dockers.json` (deben estar en la ruta configurada en los scripts).  
+- **Ruta completa de los scripts**:  
+  Asegúrate de incluir la ruta absoluta en los comandos de los plugins `exec`.
 
-### Ruta completa a los scripts
-- Asegúrate de especificar la ruta completa a los scripts `monitor_servicio.py` y `monitor_docker.py`. Por ejemplo:
-  ```bash
-  /home/usuario/tfg/scripts/servicios.py
-  /home/usuario/tfg/scripts/dockers.py
-  ```
+### Notas sobre la configuración:
 
-### Ubicación de los JSON
-- Los scripts leen los archivos `servicios.json` y `dockers.json` de las rutas absolutas especificadas:
+- **Ruta completa a los scripts**
+  - Ejemplo de rutas absolutas:
+    ```bash
+    /home/usuario/tfg/scripts/servicios.py
+    /home/usuario/tfg/scripts/dockers.py
+    ```
+
+- **Ubicación de los JSON**
   - `servicios.json`: `/home/usuario/tfg/scripts/servicios.json`
   - `dockers.json`: `/home/usuario/tfg/scripts/dockers.json`
-- Nota: Los scripts deben contener las rutas absolutas a los archivos JSON. Si cambias su ubicación o nombre, actualiza las rutas en los scripts.
 
-### Personalización de las métricas
-- Si necesitas cambiar las métricas recopiladas o el formato, puedes modificar los scripts Python.
-- Con la estructura actual, solo necesitas actualizar los archivos JSON para añadir nuevos servicios o contenedores.
-
-### Intervalo de ejecución
-- El intervalo (`interval = "30s"`) puede ajustarse según tus necesidades.
-- Nota: Intervalos más cortos permiten detectar problemas rápidamente, pero incrementan la carga del sistema.
-
+- **Intervalo de ejecución**
+  - El intervalo (`interval = "30s"`) puede ajustarse según tus necesidades. Intervalos más cortos permiten detectar problemas rápidamente, pero incrementan la carga del sistema.
 
 ---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ## 4. Ejecutar Telegraf
@@ -906,97 +973,89 @@ Con el sistema actualizado, ya no es necesario crear scripts individuales o modi
 
 ---
   
+  
+  
+  
+ # 7. Configuración de Alertas en Grafana
 
-
-# 7. Configuración de Alertas en Grafana
-
-En este apartado podras configurar y gestionar alertas en Grafana, personalizando alarmas ejemplo para que se adapten a tus necesidades específicas. Podrás configurar alertas que te avisen a tu correo cuando un umbral definido sea superado, ya sea para CPU, memoria, disco,  servicios o Docker.
-
-Esta guía está dividida en pasos: la configuración inicial, personalización de alertas y ajuste de variables según el panel. Esto te permitirá gestionar tus propias alertas sin complicaciones.
+En este apartado podrás configurar y gestionar alertas en Grafana, personalizando alarmas para que se adapten a tus necesidades específicas. Podrás configurar alertas que te avisen a tu correo cuando un umbral definido sea superado, ya sea para CPU, memoria, disco, servicios o Docker.
 
 ---
 
-## Configuración Inicial
-Esta configuracion se debe hacer para configurar las alertas de grafana por primera vez.
+## Crear y Configurar una Alerta
 
-### 1. Crear una Carpeta para las Alertas
+### Crear una Nueva Alerta
 
-Si aún no tienes carpetas configuradas en Grafana, sigue estos pasos:
+Para comenzar a configurar una alerta desde cero:
 
 1. Ve a **Alerting** > **Alert rules**.
 2. Haz clic en **New alert rule** (arriba a la derecha).
-3. En la sección "3. Set evaluation behavior", selecciona "Create new folder".
-4. Asigna un nombre a la carpeta (por ejemplo, `Alertas`).
-5. Define un intervalo de evaluación común (por ejemplo, `1m`) para que las alertas que entren en esta carpeta se evalúuen cada minuto.
-6. Guarda los cambios.
+
+### 1. Asignar un Nombre Descriptivo
+
+Asigna un nombre claro y específico a tu alerta en el campo **Alert rule name** (por ejemplo, `CPU > 80% - Servidor Principal`).
+
+### 2. Definir la Consulta y la Condición de la Alerta
+
+1. En el apartado **Query**, introduce la consulta correspondiente al tipo de alerta que deseas configurar.
+   - Consulta la **Mini Guía por Tipo de Alerta** (al final de este documento) para obtener ejemplos específicos de consultas y personalizarlos según tu necesidad.
+2. Configura el umbral y las condiciones de activación en la sección **Define alert condition**.
+
+### 3. Configurar el Comportamiento de Evaluación (Evaluation Behavior)
+
+En este paso necesitas seleccionar o crear un folder y un **evaluation group**, además de definir el tiempo de evaluación y el período pendiente.
+
+1. **Seleccionar o Crear un Folder**:
+   - Elige un folder existente donde almacenarás las alertas, o crea uno nuevo.
+   - Para crear un folder:
+     - Haz clic en **Create new folder**.
+     - Asigna un nombre descriptivo (por ejemplo, `Alertas`).
+     - Define un intervalo de evaluación (por ejemplo, `1m`), que será el tiempo en el que las alertas en este folder serán evaluadas.
+     - Guarda los cambios.
+
+2. **Seleccionar o Crear un Evaluation Group**:
+   - El **evaluation group** corresponde al grupo de alertas que se evaluarán juntas según el intervalo de evaluación del folder seleccionado.
+   - Puedes tener, por ejemplo, un grupo que evalúe cada 2 minutos alertas menos críticas, o uno que evalúe cada 10 segundos alertas que necesitan verificarse rápidamente.
+
+3. **Configurar el Pending Period**:
+   - Define cuánto tiempo debe cumplirse la condición antes de activar la alerta. 
+   - Por ejemplo:
+     - Si no te importa que la CPU esté al 100% durante unos segundos, puedes configurar el **Pending Period** en `2m` para activar la alerta solo si la condición persiste más de 2 minutos.
 
 
+### 4. Configurar el Canal de Notificación
 
----
+1. En la sección **Contact points**, selecciona un canal existente o configura uno nuevo.
+   - Si no tienes ningún canal configurado:
+     - Ve a **Alerting** > **Contact points**.
+     - Haz clic en **Create contact point**.
+     - Configura:
+       - **Nombre**: Usa un nombre descriptivo (por ejemplo, `Correo_TuNombre`).
+       - **Tipo de notificación**: Elige el canal deseado (correo electrónico, Slack, etc.).
+       - **Dirección**: Añade los destinatarios de las alertas.
+     - Guarda la configuración.
+2. Asocia el canal de notificación configurado con tu alerta.
 
-### 2. Configurar un Canal de Notificación
-Si todavia no tienes un canal de notificacion, por ejemplo un correo electronico al cual enviar las alertas, debes configurarlo:
+### 5. Personalizar el Mensaje de Alerta
 
-1. Ve a **Alerting** > **Contact points**.
-2. Haz clic en **Create contact point**.
-3. Configura el canal:
-   - **Nombre**: Usa un nombre descriptivo (por ejemplo, `correo_NombreApellidos`).
-   - **Tipo de notificación**: Selecciona el canal que desees (correo electrónico, Slack, etc.).
-   - **Dirección de correo**: Añade las direcciones que recibirán las alertas.
-4. Guarda la configuración.
-
----
-
-
-## Personalización de las Alertas
-
-A continuación, se explica cómo duplicar y personalizar una alerta existente. 
-
-### 1. Duplicar una Alerta
-
-1. **Duplicar una alerta**:
-   - Ve al panel que contiene la alerta.
-   - Haz clic en el icono de ajustes del panel(tres puntitos arriba derecha) y pulsa en Edit.
-   - Ve a la sección "Alert" y selecciona "more" en la alerta ejemplo.
-   - Haz clic en el botón "Duplicate".
-
----
-
-### 2. Configurar la Nueva Alerta
-
-Sigue estos pasos para configurar y personalizar la nueva alerta duplicada:
-
-1. **Asignar un Nombre Descriptivo**:
-   - En el campo **Alert rule name**, asigna un nombre claro y descriptivo (por ejemplo, `CPU > 80% - TuNombre`).
-
-2. **Definir la Consulta y la Condición de la Alerta**:
-   - Ajusta la consulta en el apartado **Query**.
-   - En el apartado **Define alert condition**, configura el umbral de la alerta.
-   - Revisa la sección "Mini Guía por Tipo de Alerta" para ajustar variables y umbrales específicos según el tipo de alerta.
-
-3. **Configurar el Comportamiento de Evaluación (Evaluation Behavior)**:
-   - **Seleccionar el Folder**: Asigna la alerta a una carpeta existente o crea una nueva si no existe.
-   - **Seleccionar el Evaluation Group**: Define el grupo de evaluación donde se procesará la alerta.
-   - **Establecer el Pending Period**: Este período es el tiempo que debe cumplirse una condición antes de activar la alerta (por ejemplo, `30s`).
-
-4. **Añadir Canales de Notificación (Contact Points)**:
-   - Selecciona uno o varios canales configurados previamente. Por ejemplo, añade tu correo electrónico o el de un equipo específico que hemos configurado en la configuraicon inicial.
-
-5. **Personalizar el Mensaje de Alerta**:
-   - Si quieres puedes añadir detalles al mensaje para que sea informativo. Por ejemplo: 
+1. En la sección de notificaciones, puedes añadir un mensaje informativo para identificar rápidamente el contexto de la alerta.
+   - Ejemplos:
      - `Host afectado: ${host}`
      - `Uso de CPU: ${value}%`
      - `Umbral superado: ${threshold}`
+2. Guarda los cambios.
 
-6. **Guardar los Cambios**:
-   - Una vez configurada, guarda la alerta.
+### 6. Guardar la Alerta
 
----
+Una vez completados los pasos anteriores, guarda la alerta para activarla.
 
-## Mini Guía por Tipo de Alerta
+
+  
+ # Mini Guía por Tipo de Alerta
 
 ## CPU
-- **Consulta (Query)**:
+
+- **A. Consulta (Query)**:
   ```flux
   from(bucket: "DatosPrueba")
     |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
@@ -1007,18 +1066,26 @@ Sigue estos pasos para configurar y personalizar la nueva alerta duplicada:
     |> map(fn: (r) => ({ r with _value: 100.0 - r._value }))
     |> yield(name: "mean")
   ```
+  Modifica:
+  - **Bucket**: Cambia `"DatosPrueba"` por el nombre de tu bucket.
+  - **Host**: Sustituye `"luisgarcia-VirtualBox"` por el nombre del servidor o máquina que deseas monitorizar.
 
-- **Modificaciones necesarias**:
-  1. **Bucket**: Cambia `"DatosPrueba"` por el nombre de tu bucket.
-  2. **Host**: Sustituye `"luisgarcia-VirtualBox"` por el nombre del servidor o máquina que deseas monitorizar.
-  3. **Threshold (C)**: En el apartado **Expressions**, ajusta el valor de la expresión `C` para definir el porcentaje deseado:
-     - Por ejemplo: Cambia `80` por el umbral que quieras (e.g., `70` para alertar cuando el uso de CPU supere el 70%).
+- **B. Reducción (Reduce)**:
+  Configura:
+  - **Input**: Selecciona `A` como entrada.
+  - **Función**: Selecciona `Last`.
+  - **Mode**: Selecciona `Strict`.
 
+- **C. Umbral (Threshold)**:
+  Configura:
+  - **Input**: Selecciona `B` como entrada.
+  - **Is Above**: Especifica el valor del umbral deseado (e.g., `80` para alertar cuando el uso de CPU supere el 80%).
 
 ---
 
 ## Memoria
-- **Consulta (Query)**:
+
+- **A. Consulta (Query)**:
   ```flux
   from(bucket: "DatosPrueba")
     |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
@@ -1034,18 +1101,26 @@ Sigue estos pasos para configurar y personalizar la nueva alerta duplicada:
         }))
     |> yield(name: "mean")
   ```
+  Modifica:
+  - **Bucket**: Cambia `"DatosPrueba"` por el nombre de tu bucket.
+  - **Host**: Sustituye `"luisgarcia-VirtualBox"` por el nombre del servidor o máquina.
 
-- **Modificaciones necesarias**:
-  1. **Bucket**: Cambia `"DatosPrueba"` por el nombre de tu bucket.
-  2. **Host**: Sustituye `"luisgarcia-VirtualBox"` por el nombre de tu servidor o máquina.
-  3. **Threshold (C)**: En el apartado **Expressions**, ajusta el valor de la expresión `C` para definir el porcentaje deseado:
-     - Por ejemplo: Cambia `90` por el umbral deseado (e.g., `85` para alertar cuando el uso de memoria supere el 85%).
+- **B. Reducción (Reduce)**:
+  Configura:
+  - **Input**: Selecciona `A` como entrada.
+  - **Función**: Selecciona `Last`.
+  - **Mode**: Selecciona `Strict`.
 
+- **C. Umbral (Threshold)**:
+  Configura:
+  - **Input**: Selecciona `B` como entrada.
+  - **Is Above**: Especifica el valor del umbral deseado (e.g., `85` para alertar cuando el uso de memoria supere el 85%).
 
 ---
 
 ## Disco
-- **Consulta (Query)**:
+
+- **A. Consulta (Query)**:
   ```flux
   from(bucket: "DatosPrueba")
     |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
@@ -1055,19 +1130,26 @@ Sigue estos pasos para configurar y personalizar la nueva alerta duplicada:
     |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)
     |> yield(name: "mean")
   ```
+  Modifica:
+  - **Bucket**: Cambia `"DatosPrueba"` por el nombre de tu bucket.
+  - **Host**: Sustituye `"luisgarcia-VirtualBox"` por el nombre del servidor o máquina.
 
-- **Modificaciones necesarias**:
-  1. **Bucket**: Cambia `"DatosPrueba"` por el nombre de tu bucket.
-  2. **Host**: Sustituye `"luisgarcia-VirtualBox"` por el nombre de tu servidor o máquina.
-  3. **Threshold (C)**: En el apartado **Expressions**, ajusta el valor de la expresión `C` para definir el porcentaje deseado:
-     - Por ejemplo: Cambia `85` por el umbral deseado (e.g., `90` para alertar cuando el uso del disco supere el 90%).
+- **B. Reducción (Reduce)**:
+  Configura:
+  - **Input**: Selecciona `A` como entrada.
+  - **Función**: Selecciona `Last`.
+  - **Mode**: Selecciona `Strict`.
 
+- **C. Umbral (Threshold)**:
+  Configura:
+  - **Input**: Selecciona `B` como entrada.
+  - **Is Above**: Especifica el valor del umbral deseado (e.g., `90` para alertar cuando el uso del disco supere el 90%).
 
 ---
 
+## Servicios
 
-### **Servicios**
-- **Consulta (Query)**:
+- **A. Consulta (Query)**:
   ```flux
   from(bucket: "DatosPrueba")
     |> range(start: v.timeRangeStart, stop: v.timeRangeStop) // Rango de tiempo dinámico del panel
@@ -1082,21 +1164,26 @@ Sigue estos pasos para configurar y personalizar la nueva alerta duplicada:
     |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value") // Reestructura los datos para 'status_code'
     |> keep(columns: ["_time", "url", "status_code"])
   ```
+  Modifica:
+  - **Bucket**: Cambia `"DatosPrueba"` por el nombre de tu bucket.
+  - **Filtros opcionales**: Usa filtros según tus necesidades (`url`, `nombre`, `servidor`).
 
-- **Modificaciones necesarias**:
-  1. **Bucket**: Cambia `"DatosPrueba"` por el nombre de tu bucket.
-  2. **Filtros opcionales**: Usa uno o varios filtros según tus necesidades. Tambien puedes filtrar por una lista de urls o nombres. No tiene por que ser uno solo. Por ejemplo:
-     - **Filtrar por URL**: Si quieres monitorear un servicio específico, descomenta el filtro `r["url"]`.
-     - **Filtrar por nombre del servicio**: Usa el filtro `r["nombre"]`.
-     - **Filtrar por palabras clave**: Usa `r["keywords"]` para limitar el monitoreo a servicios relevantes.
+- **B. Reducción (Reduce)**:
+  Configura:
+  - **Input**: Selecciona `A` como entrada.
+  - **Función**: Selecciona `Last`.
+  - **Mode**: Selecciona `Strict`.
 
-- **Umbral recomendado**:
-  - Activa la alerta cuando `status_code != 200`.
+- **C. Umbral (Threshold)**:
+  Configura:
+  - **Input**: Selecciona `B` como entrada.
+  - **Is Above**: Especifica el valor del umbral deseado (e.g., `300` para alertar cuando el codigo no sea correcto).
 
 ---
 
-### **Docker**
-- **Consulta (Query)**:
+## Docker
+
+- **A. Consulta (Query)**:
   ```flux
   from(bucket: "DatosPrueba")
     |> range(start: v.timeRangeStart, stop: v.timeRangeStop) // Rango de tiempo dinámico del panel
@@ -1107,19 +1194,22 @@ Sigue estos pasos para configurar y personalizar la nueva alerta duplicada:
     |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value") // Reestructura los datos
     |> keep(columns: ["_time", "nombre", "status_code"])
   ```
+  Modifica:
+  - **Bucket**: Cambia `"DatosPrueba"` por el nombre de tu bucket.
+  - **Filtros opcionales**: Filtra por `nombre` o `keywords` según tus necesidades.
 
-- **Modificaciones necesarias**:
-  1. **Bucket**: Cambia `"DatosPrueba"` por el nombre de tu bucket.
-  2. **Filtros opcionales**: Usa uno o varios filtros según el contenedor que quieras monitorear. Por ejemplo:
-     - **Filtrar por nombre del contenedor**: Usa `r["nombre"]` para enfocarte en un contenedor específico.
-     - **Filtrar por palabras clave (keywords)**: Usa `r["keywords"]` para identificar contenedores con una función específica, como `database` o `frontend`.
+- **B. Reducción (Reduce)**:
+  Configura:
+  - **Input**: Selecciona `A` como entrada.
+  - **Función**: Selecciona `Last`.
+  - **Mode**: Selecciona `Strict`.
 
-- **Umbral recomendado**:
-  - Activa la alerta cuando `status_code != 200`.
-
-
----
-
+- **C. Umbral (Threshold)**:
+  Configura:
+  - **Input**: Selecciona `B` como entrada.
+  - **Is Above**: Especifica el valor del umbral deseado (e.g., `300` para alertar cuando el codigo no sea correcto).
+ 
+  
 ## Conclusión
 
 Con esta configuración, cada usuario podrá gestionar y personalizar sus alertas en Grafana de forma sencilla. Recuerda duplicar las alertas existentes, ajustar las variables necesarias y definir los canales de notificación apropiados. Si tienes dudas, revisa las consultas proporcionadas para cada tipo de alerta y adapta los valores según tus necesidades.
