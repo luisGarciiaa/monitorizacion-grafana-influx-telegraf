@@ -6,20 +6,20 @@
 
 # Índice de la Guía de Configuración del Sistema de Monitorización
 
-1. Introducción
+1. **Introducción**
    - 1.1 Descripción general del sistema
    - 1.2 Estimación del tamaño diario de métricas y dashboards
 
-2. Instalación y Configuración de InfluxDB
-   - 2.0 Instalación de InfluxDB v2
-   - 2.1 Requisitos
-   - 2.2 Pasos de instalación
-   - 2.3 Configuración inicial
-     - A Con entorno grafico
-     - B Sin entorno grafico
-   - 2.4 Configurar InfluxDB como un Servicio
+2. **Instalación y Configuración de InfluxDB**
+   - 2.1 Instalación de InfluxDB v2
+     - 2.1.1 Requisitos
+     - 2.1.2 Pasos de instalación
+   - 2.2 Configuración inicial
+     - 2.2.1 Servidor con entorno gráfico
+     - 2.2.2 Servidor sin entorno gráfico
+   - 2.3 Configurar InfluxDB como un servicio
 
-3. Instalación y Configuración de Telegraf
+3. **Instalación y Configuración de Telegraf**
    - 3.1 Requisitos
    - 3.2 Pasos de instalación
    - 3.3 Configuración de entradas (`inputs`)
@@ -29,7 +29,7 @@
    - 3.5 Ejecución y verificación de Telegraf
    - 3.6 Configuración de Telegraf como servicio
 
-4. Instalación y Configuración de Grafana
+4. **Instalación y Configuración de Grafana**
    - 4.1 Requisitos
    - 4.2 Pasos de instalación
    - 4.3 Configuración inicial
@@ -37,7 +37,7 @@
    - 4.5 Importación de dashboards predefinidos
      - 4.5.1 Revisión del bucket y fuente de datos
 
-5. Creación y Configuración de Dashboards
+5. **Creación y Configuración de Dashboards**
    - 5.1 Dashboard de Servidores (Servidores_OEG)
      - 5.1.1 Descripción del propósito
      - 5.1.2 Métricas mostradas
@@ -51,33 +51,36 @@
      - 5.3.2 Limitaciones del dashboard
      - 5.3.3 Paneles y descripción
 
-6. Añadir Nuevos Servidores o Servicios
+6. **Añadir Nuevos Servidores o Servicios**
    - 6.1 Añadir un nuevo servidor
    - 6.2 Añadir un nuevo servicio o contenedor Docker
      - 6.2.1 Monitorización de servicios web (URLs)
      - 6.2.2 Monitorización de contenedores Docker
+   - 6.3 Beneficios del nuevo enfoque
 
-7. Configuración de Alertas en Grafana
-   - 7.1 Introducción a las alertas
-   - 7.2 Configuración inicial
-     - 7.2.1 Crear una carpeta para las alertas
-     - 7.2.2 Configurar un canal de notificación
-   - 7.3 Personalización de las alertas
-     - 7.3.1 Duplicar y personalizar una alerta
-     - 7.3.2 Configurar el comportamiento de evaluación
-     - 7.3.3 Añadir canales de notificación
-   - 7.4 Mini Guía por Tipo de Alerta
-     - 7.4.1 Alertas de CPU
-     - 7.4.2 Alertas de memoria
-     - 7.4.3 Alertas de disco
-     - 7.4.4 Alertas de servicios
-       - 7.4.4.1 Configuración de filtros por URL, nombre, palabras clave
-       - 7.4.4.2 Ajustes para alertar por `status_code != 200`
-     - 7.4.5 Alertas de contenedores Docker
-       - 7.4.5.1 Configuración de filtros por nombre, palabras clave
-       - 7.4.5.2 Ajustes para alertar por `status_code != 200`
-   - 7.5 Verificación y pruebas de las alertas
-   - 7.6 Recomendaciones adicionales
+7. **Configuración de Alertas en Grafana**
+   - 7.1 Crear y Configurar una Alerta
+     - 7.1.1 Crear una nueva alerta
+     - 7.1.2 Asignar un nombre descriptivo
+     - 7.1.3 Definir la consulta y la condición de la alerta
+     - 7.1.4 Configurar el comportamiento de evaluación
+     - 7.1.5 Configurar el canal de notificación
+     - 7.1.6 Personalizar el mensaje de alerta
+     - 7.1.7 Guardar la alerta
+   - 7.2 Mini Guía por Tipo de Alerta
+     - 7.2.1 Alertas de CPU
+     - 7.2.2 Alertas de Memoria
+     - 7.2.3 Alertas de Disco
+     - 7.2.4 Alertas de Servicios
+       - 7.2.4.1 Configuración de filtros por URL, nombre, palabras clave
+       - 7.2.4.2 Ajustes para alertar por `status_code != 200`
+     - 7.2.5 Alertas de Contenedores Docker
+       - 7.2.5.1 Configuración de filtros por nombre, palabras clave
+       - 7.2.5.2 Ajustes para alertar por `status_code != 200`
+   - 7.3 Verificación y Pruebas de las Alertas
+   - 7.4 Recomendaciones Adicionales
+
+
 
 
 
@@ -178,19 +181,19 @@ Este análisis proporciona una estimación aproximada del espacio que ocupan las
 ---
 ---
 
-# 2.Guía de Instalación y Configuración de InfluxDB v2
+# 2.Instalación y Configuración de InfluxDB v2
 
 ## Descripción General
 Esta guía detalla los pasos para instalar y configurar **InfluxDB v2** en servidores Linux usando binarios. InfluxDB v2 se utilizará para almacenar las métricas recolectadas por Telegraf y permitirá la visualización de los datos en Grafana.
 
 ---
 
-## 2.0 Instalación de InfluxDB v2
+## 2.1 Instalación de InfluxDB v2
 
-### 2.1 Requisitos
+### 2.1.1 Requisitos
 - **Sistema Operativo**: Linux (64 bits). Para servidores de 32 bits o con otra arquitectura, consulta la página oficial de [InfluxData Downloads](https://portal.influxdata.com/downloads) para descargar la versión adecuada.
 
-### 2.2 Pasos de Instalación
+### 2.1.2 Pasos de Instalación
 
 1. **Descargar el archivo binario de InfluxDB v2**: 
 
@@ -219,9 +222,10 @@ Esta guía detalla los pasos para instalar y configurar **InfluxDB v2** en servi
 
 
 
-## 2.3 Configuración Inicial
-### A. Servidor con Entorno Gráfico 
+## 2.2 Configuración Inicial
+### 2.2.1 Servidor con Entorno Gráfico 
 
+#### 2.2.1.1 Configuración inicial
 1. **Abrir la Interfaz de Configuración**: Accede a [http://localhost:8086](http://localhost:8086) en un navegador.
 
 2. **Crear Usuario Administrador y Configuración Inicial**:
@@ -240,7 +244,7 @@ Esta configuración inicial solo se realiza la primera vez que inicias InfluxDB 
 
 ---
 
-#### 3. Configuración de API y Token de Acceso
+#### 2.2.1.2 Configuración de API y Token de Acceso
 
 Para permitir la conexión desde Telegraf u otras aplicaciones externas, necesitas un token de acceso.
 
@@ -249,7 +253,7 @@ Para permitir la conexión desde Telegraf u otras aplicaciones externas, necesit
 
 ---
 
-#### 4. Configuración de Retención de Datos
+#### 2.2.1.3 Configuración de Retención de Datos
 
 1. Navega a **Data > Buckets** en la interfaz de InfluxDB.
 2. Selecciona el bucket que creaste durante la configuración inicial (ej. `MiBucket`).
@@ -257,7 +261,7 @@ Para permitir la conexión desde Telegraf u otras aplicaciones externas, necesit
 
 ---
 
-#### 5. Comprobación de la IP del Servidor y Preparación para la Conexión Externa de Telegraf
+#### 2.2.1.4 Comprobación de la IP del Servidor y Preparación para la Conexión Externa de Telegraf
 
 Para que otros servidores puedan enviar métricas a este servidor InfluxDB desde Telegraf, sigue estos pasos:
 
@@ -292,9 +296,9 @@ Para que otros servidores puedan enviar métricas a este servidor InfluxDB desde
 --- 
 
 
-### B. Servidores sin Entorno Gráfico
+### 2.2.2 Servidores sin Entorno Gráfico
 
-#### 1. Descargar e Instalar el Cliente CLI
+#### 2.2.2.1 Descargar e Instalar el Cliente CLI
 
 El cliente CLI de InfluxDB no se incluye en el paquete principal y debe descargarse por separado. Sigue estos pasos:
 
@@ -322,7 +326,7 @@ Esto confirmará que el cliente CLI se instaló correctamente.
 
 ---
 
-#### 2. Iniciar el servidor de InfluxDB
+#### 2.2.2.2 Iniciar el servidor de InfluxDB
 
 Ejecuta el siguiente comando para iniciar InfluxDB en el servidor: Este paso es necesario para poder configurar influxdb y que la CLI pueda comunicarse con influxdb
 
@@ -335,7 +339,7 @@ InfluxDB se ejecutará en el puerto `8086` por defecto. Deja este proceso corrie
 
 ---
 
-#### 3. Configuración Inicial mediante CLI
+#### 2.2.2.3 Configuración Inicial mediante CLI
 
 El cliente CLI de InfluxDB (`influx`) te permite realizar la configuración inicial sin necesidad de un navegador web. Sigue estos pasos:
 
@@ -364,7 +368,7 @@ El cliente CLI de InfluxDB (`influx`) te permite realizar la configuración inic
 
 ---
 
-#### 4. Obtener el Token de Acceso
+#### 2.2.2.4 Obtener el Token de Acceso
 
 Si necesitas recuperar el token generado durante la configuración inicial, ejecuta el siguiente comando:
 
@@ -377,7 +381,7 @@ Esto mostrará una lista de tokens disponibles, junto con sus permisos. Copia el
 ---
 
 
-## 2.4. Configurar InfluxDB como un Servicio
+## 2.3. Configurar InfluxDB como un Servicio
 
 Para que InfluxDB se ejecute automáticamente cada vez que el servidor se inicie, puedes configurarlo como un servicio del sistema.
 
@@ -454,19 +458,19 @@ Con esta guía, has instalado y configurado InfluxDB v2 en un entorno sin interf
 
 
 
-# 3.Guía de Instalación y Configuración de Telegraf en Servidores
+# 3.Instalación y Configuración de Telegraf en Servidores
 
 ## Descripción General
 Esta parte del documento explica los pasos para instalar y configurar el agente **Telegraf** para la recolección de métricas en servidores de Linux, con envío de datos a **InfluxDB** y la posterior visualizacion en **Grafana**. El propósito es simplificar el proceso de despliegue.
 
 ---
 
-## 1. Instalación de Telegraf
+## 3.1 Instalación de Telegraf
 
-### 3.1 Requisitos
+### 3.1.1 Requisitos
 - **Sistema Operativo**: Linux (64 bits). Si tu servidor es de 32 bits, consulta la página oficial de [InfluxData Downloads](https://portal.influxdata.com/downloads) para descargar la versión adecuada.
 
-### 3.2 Pasos de Instalación
+### 3.1.2 Pasos de Instalación
 1. **Descargar el archivo binario de Telegraf**: 
 
     ```bash
@@ -484,7 +488,7 @@ Esta parte del documento explica los pasos para instalar y configurar el agente 
 
 ---
 
-## 2. Configuración de Telegraf
+## 3.2 Configuración de Telegraf
 
 Para configurar Telegraf, generaremos un archivo de configuración que incluya algunas de las métricas clave (CPU, memoria, disco) y el destino de los datos en InfluxDB v2.
 
@@ -504,11 +508,11 @@ Para configurar Telegraf, generaremos un archivo de configuración que incluya a
     - `-input-filter cpu:mem:disk`: Selecciona los plugins de input para monitorizar CPU, memoria y disco.
     - `-output-filter influxdb_v2`: Especifica InfluxDB v2 como el destino de las métricas.
 
-## 3. Configuración de Parámetros en `telegraf.conf`
+### 3.2.1 Configuración de Parámetros en `telegraf.conf`
 
 Para una configuración adecuada, vamos a dividir los parámetros en dos secciones: **Parámetros de Salida** y **Parámetros de Entrada**.
 
-### Parámetros de Salida (`[[outputs]]`)
+#### 3.2.1.1 Parámetros de Salida (`[[outputs]]`)
 
 1. **Abrir `telegraf.conf` para editar**: (yo uso nano pero elija el que prefiera)
 
@@ -536,13 +540,13 @@ Para una configuración adecuada, vamos a dividir los parámetros en dos seccion
 
 
 
-### Parámetros de Entrada (`[[inputs]]`)
+#### 3.2.1.2 Parámetros de Entrada (`[[inputs]]`)
 
 Los parámetros de entrada (`inputs`) son responsables de recoger las métricas que queremos monitorizar. En este documento, explicaremos cómo configurar tanto los plugins predefinidos como los personalizados (como `exec` para servicios web y contenedores Docker).
 
 ---
 
-## 1. Localizar la sección de entrada (`[[inputs]]`)
+1. **Localizar la sección de entrada (`[[inputs]]`)**:
 
 Usa el siguiente atajo en `nano` para localizar rápidamente la sección `[[inputs]]` en el archivo `telegraf.conf`:
 
@@ -555,7 +559,7 @@ Ctrl + W y escribe [[inputs
 
 
 
-## 2. Configuracion plugins
+2. **Configuracion plugins**
 
 Actualmente, se han definido tres dashboards principales para monitorización. Cada uno utiliza diferentes plugins de entrada (`inputs`) de Telegraf:
 
@@ -618,7 +622,7 @@ Actualmente, se han definido tres dashboards principales para monitorización. C
 
 ---
 
-## 2. Configuración del Plugin `[[inputs.docker]]`
+ 2. **Configuración del Plugin `[[inputs.docker]]`**
 
 Para el **Dashboard Técnico de Docker**, es necesario habilitar el plugin `docker` en el archivo `telegraf.conf`. Este plugin recopila métricas directamente del socket de Docker sin necesidad de scripts adicionales.
 
@@ -643,7 +647,7 @@ Para el **Dashboard Técnico de Docker**, es necesario habilitar el plugin `dock
 
 ---
 
-## 3. Relación entre Dashboards y Plugins
+ 3. **Relación entre Dashboards y Plugins**
 
 | Dashboard               | Plugins Utilizados                                          | Detalles                                                    |
 |--------------------------|------------------------------------------------------------|------------------------------------------------------------|
@@ -653,9 +657,9 @@ Para el **Dashboard Técnico de Docker**, es necesario habilitar el plugin `dock
 
 ---
 
-## 4. Configuración General de los Plugins `exec`
+ 4. **Configuración General de los Plugins `exec`**
 
-### Configuración del plugin `exec` para el Dashboard de Servicios:
+#### Configuración del plugin `exec` para el Dashboard de Servicios:
 
 ```ini
 [[inputs.exec]]
@@ -677,13 +681,13 @@ Para el **Dashboard Técnico de Docker**, es necesario habilitar el plugin `dock
     url = "docker_general"
 ```
 
-### Configuración de Archivos JSON y Scripts
+#### Configuración de Archivos JSON y Scripts
 - **JSON utilizados**:
   - `servicios.json` y `dockers.json` (deben estar en la ruta configurada en los scripts).  
 - **Ruta completa de los scripts**:  
   Asegúrate de incluir la ruta absoluta en los comandos de los plugins `exec`.
 
-### Notas sobre la configuración:
+#### Notas sobre la configuración:
 
 - **Ruta completa a los scripts**
   - Ejemplo de rutas absolutas:
@@ -717,11 +721,11 @@ Para el **Dashboard Técnico de Docker**, es necesario habilitar el plugin `dock
 
 
 
-## 4. Ejecutar Telegraf
+## 3.3 Ejecutar Telegraf
 
 Ahora que hemos configurado `telegraf.conf`, podemos ejecutar Telegraf y enviar las métricas configuradas a InfluxDB. Esto permitirá monitorear las métricas desde la base de datos.
 
-### Pasos para Ejecutar Telegraf
+### 3.3.1 Pasos para Ejecutar Telegraf
 
 1. **Navegar a la Carpeta de Telegraf**:
    - Ve al directorio donde se encuentra el binario de Telegraf. Por ejemplo:
@@ -735,7 +739,7 @@ Ahora que hemos configurado `telegraf.conf`, podemos ejecutar Telegraf y enviar 
      ./telegraf --config telegraf.conf
      ```
 
-### Verificación
+#### Verificación
 
 - Una vez ejecutado, Telegraf comenzará a enviar las métricas a InfluxDB.
 - Puedes verificar que las métricas están siendo recibidas correctamente desde la interfaz de InfluxDB, accediendo a **Data Explorer** y ejecutando una consulta para revisar las métricas.
@@ -744,7 +748,7 @@ Ahora que hemos configurado `telegraf.conf`, podemos ejecutar Telegraf y enviar 
 
 
 
-### 5 Configurar Telegraf como un Servicio
+## 3.4 Configurar Telegraf como un Servicio
 
 #### Descripción General
 
@@ -752,7 +756,7 @@ Esta guía explica cómo configurar **Telegraf** como un servicio utilizando **s
 
 ---
 
-#### 1. Crear un archivo de servicio para systemd
+### 3.4.1 Crear un archivo de servicio para systemd
 
 1. Abre un terminal y crea un archivo de servicio para Telegraf en el directorio de configuración de systemd:
    ```bash
@@ -782,7 +786,7 @@ Esta guía explica cómo configurar **Telegraf** como un servicio utilizando **s
 
 ---
 
-#### 2. Recargar systemd
+### 3.4.2 Recargar systemd
 
 Después de guardar el archivo, recarga los demonios de **systemd** para que el nuevo archivo de servicio sea reconocido:
 ```bash
@@ -791,7 +795,7 @@ sudo systemctl daemon-reload
 
 ---
 
-#### 3. Habilitar el servicio para inicio automático
+### 3.4.3 Habilitar el servicio para inicio automático
 
 Habilita el servicio para que se ejecute automáticamente cada vez que el servidor arranque:
 ```bash
@@ -800,7 +804,7 @@ sudo systemctl enable telegraf
 
 ---
 
-#### 4. Iniciar el servicio de Telegraf
+### 3.4.4 Iniciar el servicio de Telegraf
 
 Inicia el servicio de Telegraf manualmente para comprobar que funciona correctamente:
 ```bash
@@ -809,7 +813,7 @@ sudo systemctl start telegraf
 
 ---
 
-#### 5. Verificar el estado del servicio
+### 3.4.5 Verificar el estado del servicio
 
 Revisa el estado del servicio para confirmar que está corriendo sin problemas:
 ```bash
@@ -820,7 +824,7 @@ Si el servicio se está ejecutando correctamente, deberías ver una salida indic
 
 ---
 
-#### 6. Logs del servicio
+### 3.4.6 Logs del servicio
 
 Para depurar problemas o verificar que Telegraf está funcionando correctamente, puedes consultar los logs del servicio:
 ```bash
@@ -831,13 +835,15 @@ Esto mostrará los eventos en tiempo real relacionados con el servicio de Telegr
 
 ---
 
-#### 7. Notas adicionales
+### 3.4.7 Notas adicionales
 
 - **Permisos de usuario**: Asegúrate de que el usuario especificado en `User` tenga permisos para acceder al archivo de configuración (`telegraf.conf`) y ejecutar cualquier script asociado.
 - **Plugins personalizados**: Si estás utilizando plugins como `exec`, asegúrate de que las rutas especificadas en los comandos son accesibles y tienen los permisos correctos.
 - **Prueba del servicio**: Después de configurar, realiza una consulta en InfluxDB para confirmar que las métricas están siendo enviadas correctamente.
 
 Con esta configuración, Telegraf estará listo para ejecutarse automáticamente y garantizar una recolección continua de métricas.
+
+
 
 
 
@@ -855,13 +861,13 @@ Esta guía detalla los pasos para instalar y configurar **Grafana** en servidore
 
 ---
 
-## 1. Instalación de Grafana
+## 4.1. Instalación de Grafana
 
-### Requisitos
+### 4.1.1 Requisitos
 - **Sistema Operativo**: Linux (64 bits). Para otras arquitecturas o sistemas, consulta la página oficial de [Grafana Downloads](https://grafana.com/grafana/download).
 - **InfluxDB v2**: Asegúrate de que InfluxDB esté instalado y funcionando antes de configurar Grafana.
 
-### Pasos de Instalación
+### 4.1.2 Pasos de Instalación
 
 1. **Descargar el archivo binario de Grafana**:
 
@@ -890,7 +896,7 @@ Esta guía detalla los pasos para instalar y configurar **Grafana** en servidore
 
 ---
 
-## 2. Configuración Inicial de Grafana
+## 4.2. Configuración Inicial de Grafana
 
 1. **Acceso a la Interfaz Web**:
    - Abre un navegador web y accede a [http://localhost:3000](http://localhost:3000).
@@ -919,11 +925,11 @@ Esta guía detalla los pasos para instalar y configurar **Grafana** en servidore
 
 ---
 
-## Configuración del Correo en Grafana (`grafana.ini`)
+## 4.3 Configuración del Correo en Grafana (`grafana.ini`)
 
 Para configurar el envío de notificaciones por correo desde Grafana, debes modificar el archivo `grafana.ini`. A continuación, te explico los pasos:
 
-### Pasos para Configurar el Correo SMTP
+### 3.3.1 Pasos para Configurar el Correo SMTP
 
 1. **Copiar y Renombrar el Archivo `default.ini`**:
    - En la carpeta `grafana/conf`, encontrarás un archivo llamado `default.ini`. Este archivo contiene la configuración base.
@@ -972,11 +978,11 @@ Para configurar el envío de notificaciones por correo desde Grafana, debes modi
    - 
    
 
-## 3. Importar un Dashboard en Grafana
+## 4.4 Importar un Dashboard en Grafana
 
 Después de configurar Grafana y conectar las fuentes de datos, el siguiente paso es importar un dashboard predefinido para visualizar los datos. A continuación, se detallan los pasos para importar un dashboard desde un archivo JSON, como los que se pueden encontrar en repositorios de GitHub.
 
-### Pasos para Importar un Dashboard
+### 4.4.1 Pasos para Importar un Dashboard
 
 1. **Accede a la Sección de Dashboards**:
    - En la barra lateral izquierda de Grafana, selecciona **"Dashboards"**.
@@ -1014,13 +1020,13 @@ Después de configurar Grafana y conectar las fuentes de datos, el siguiente pas
 
 
 
-## 4.Configurar Grafana como un Servicio en Linux
+## 4.5 Configurar Grafana como un Servicio en Linux
 
 Esta guía detalla los pasos para configurar Grafana como un servicio utilizando `systemd` en sistemas Linux. Al configurarlo como un servicio, Grafana se iniciará automáticamente cada vez que el sistema arranque, asegurando su disponibilidad continua.
 
 ---
 
-### 1. Crear un archivo de servicio para systemd
+### 4.5.1 Crear un archivo de servicio para systemd
 
 Abre un terminal y crea un archivo de servicio para Grafana en el directorio de configuración de `systemd`:
 
@@ -1052,7 +1058,7 @@ Guarda y cierra el archivo.
 
 ---
 
-### 2. Recargar systemd
+### 4.5.2. Recargar systemd
 
 Recarga los demonios de `systemd` para que el nuevo archivo de servicio sea reconocido:
 
@@ -1062,7 +1068,7 @@ sudo systemctl daemon-reload
 
 ---
 
-### 3. Iniciar el servicio de Grafana
+### 4.5.3. Iniciar el servicio de Grafana
 
 Inicia el servicio de Grafana manualmente para comprobar que funciona correctamente:
 
@@ -1072,7 +1078,7 @@ sudo systemctl start grafana
 
 ---
 
-### 4. Verificar el estado del servicio
+### 4.5.4. Verificar el estado del servicio
 
 Revisa el estado del servicio para confirmar que está corriendo sin problemas:
 
@@ -1088,7 +1094,7 @@ Active: active (running)
 
 ---
 
-### 5. Habilitar el inicio automático del servicio
+### 4.5.5. Habilitar el inicio automático del servicio
 
 Para que Grafana se inicie automáticamente cada vez que el sistema arranque, habilita el servicio:
 
@@ -1104,7 +1110,7 @@ Created symlink /etc/systemd/system/multi-user.target.wants/grafana.service → 
 
 ---
 
-### 6. Ver logs del servicio (opcional)
+### 4.5.6. Ver logs del servicio (opcional)
 
 Para depurar problemas o verificar que Grafana está funcionando correctamente, puedes consultar los logs del servicio:
 
@@ -1116,7 +1122,7 @@ Este comando mostrará los eventos en tiempo real relacionados con el servicio d
 
 ---
 
-### 7. Notas adicionales
+### 4.5.7. Notas adicionales
 
 - **Puertos en uso:** Si Grafana no se inicia correctamente y muestra un error como `bind: address already in use`, verifica que el puerto `3000` no esté siendo utilizado por otro proceso.
   
@@ -1134,14 +1140,22 @@ Con esta configuración, Grafana estará listo para ejecutarse automáticamente 
 ---
 
 
+
+
+
+
+
+
+
+
 ## 5. Definición y Descripción de los Dashboards
 
-### 5.1 Dashboard de Servidores (Servidores_OEG)
+## 5.1 Dashboard de Servidores (Servidores_OEG)
 ![Dashboard de Servidores](imagenes/dashboard_servidores.png)
 
 Este dashboard está diseñado para monitorizar el rendimiento y estado de diferentes servidores mediante tres paneles principales: **CPU**, **Memoria** y **Disco**. Además, ofrece la posibilidad de filtrar las métricas por diferentes variables clave, lo que permite una comparación y un análisis detallado según las necesidades del usuario.
 
-#### **Paneles y Descripción**
+### 5.1.1  **Paneles y Descripción**
 
 1. **Porcentaje de CPU**:
 
@@ -1231,13 +1245,13 @@ Este dashboard permite filtrar las métricas mostradas utilizando tres variables
 
 ---
 
-### 5.2 Dashboard de Servicios (Servicios_OEG)
+## 5.2 Dashboard de Servicios (Servicios_OEG)
 ![Dashboard de Servicios](imagenes/dashboard_servicios1.png)
 ![Dashboard de Servicios](imagenes/dashboard_servicios2.png)
 
 Este dashboard se encarga de monitorizar el estado de contenedores Docker y servicios web mediante dos scripts de Python que se ejecutan cada 30 segundos: `monitor_docker.py` y `monitor_servicio.py`. Los scripts obtienen información de un archivo JSON donde el usuario puede añadir las URLs o contenedores junto con la información necesaria.
 
-#### **Paneles y Descripción**
+### 5.2.1 **Paneles y Descripción**
 
 1. **Estado de los Contenedores Docker (Tabla)**:
 
@@ -1351,17 +1365,17 @@ Este dashboard se encarga de monitorizar el estado de contenedores Docker y serv
 
 
 
-### 5.3.Dashboard de Docker (Docker_OEG)
+## 5.3.Dashboard de Docker (Docker_OEG)
 ![Dashboard de Metricas Docker](imagenes/dashboard_metricas_Docker.png)
 
 Este dashboard ha sido creado debido a la complicación que supone tener Python instalado en los servidores para monitorizar contenedores Docker. A diferencia del dashboard de **Servicios**, donde solo se necesita un servidor central con Python que consulte las URLs, en Docker no todos los usuarios tienen la posibilidad o la voluntad de instalar Python en sus servidores. Este dashboard soluciona ese problema utilizando el plugin nativo de Docker de Telegraf.
 
-#### **Limitaciones del Dashboard**
+### 5.3.1 **Limitaciones del Dashboard**
 
 - No tiene la posibilidad de crear una tabla que indique qué contenedores están activos y cuáles no.
 - Para saber qué contenedores están activos, se debe revisar visualmente los paneles de series temporales y comprobar si hay métricas disponibles para cada contenedor.
 
-#### **Paneles y Descripción**
+### 5.3.2 **Paneles y Descripción**
 
 1. **Estado Dockers (Barras)**:
 
@@ -1488,7 +1502,7 @@ Este dashboard ha sido creado debido a la complicación que supone tener Python 
 
 # 6. Añadir un Nuevo Servidor o Servicio al Sistema de Monitorización
 
-## 1. Añadir un Nuevo Servidor
+## 6.1. Añadir un Nuevo Servidor
 Añadir un nuevo servidor al sistema de monitorización ahora es un proceso sencillo. Solo necesitas configurar **Telegraf** en el servidor y asegurarte de que envíe las métricas al bucket de **InfluxDB**. Los dashboards de Grafana ya están preparados para reconocer y mostrar los datos de cualquier servidor configurado en la base de datos.
 
 Pasos:
@@ -1498,11 +1512,11 @@ Pasos:
 
 ---
 
-## 2. Añadir un Nuevo Servicio o Contenedor Docker
+## 6.2. Añadir un Nuevo Servicio o Contenedor Docker
 
 Con el sistema actualizado, ya no es necesario crear scripts individuales o modificar configuraciones complejas. Ahora, simplemente edita los archivos JSON en la carpeta `scripts` para añadir nuevos servicios o contenedores Docker.
 
-### 2.1 Monitorización de Servicios Web (URLs)
+### 6.2.1 Monitorización de Servicios Web (URLs)
 
 1. **Editar el archivo `servicios.json`**:
    - Abre el archivo en la carpeta `scripts`.
@@ -1525,7 +1539,7 @@ Con el sistema actualizado, ya no es necesario crear scripts individuales o modi
 
 ---
 
-### 2.2 Monitorización de Contenedores Docker
+### 6.2.2 Monitorización de Contenedores Docker
 
 1. **Editar el archivo `dockers.json`**:
    - Abre el archivo en la carpeta `scripts`.
@@ -1548,7 +1562,7 @@ Con el sistema actualizado, ya no es necesario crear scripts individuales o modi
 
 ---
 
-### Beneficios del Nuevo Enfoque
+### 6.3 Beneficios del Nuevo Enfoque
 
 - **Simplificación**: Ya no es necesario crear scripts personalizados para cada servicio o contenedor.
 - **Flexibilidad**: Los servicios y contenedores se configuran en un solo lugar (los archivos JSON).
@@ -1559,32 +1573,32 @@ Con el sistema actualizado, ya no es necesario crear scripts individuales o modi
   
   
   
- # 7. Configuración de Alertas en Grafana
+# 7. Configuración de Alertas en Grafana
 
 En este apartado podrás configurar y gestionar alertas en Grafana, personalizando alarmas para que se adapten a tus necesidades específicas. Podrás configurar alertas que te avisen a tu correo cuando un umbral definido sea superado, ya sea para CPU, memoria, disco, servicios o Docker.
 
 ---
 
-## Crear y Configurar una Alerta
+## 7.1 Crear y Configurar una Alerta
 
-### Crear una Nueva Alerta
+### 7.1.1 Crear una Nueva Alerta
 
 Para comenzar a configurar una alerta desde cero:
 
 1. Ve a **Alerting** > **Alert rules**.
 2. Haz clic en **New alert rule** (arriba a la derecha).
 
-### 1. Asignar un Nombre Descriptivo
+### 7.1.2 Asignar un Nombre Descriptivo
 
 Asigna un nombre claro y específico a tu alerta en el campo **Alert rule name** (por ejemplo, `CPU > 80% - Servidor Principal`).
 
-### 2. Definir la Consulta y la Condición de la Alerta
+### 7.1.3 Definir la Consulta y la Condición de la Alerta
 
 1. En el apartado **Query**, introduce la consulta correspondiente al tipo de alerta que deseas configurar.
    - Consulta la **Mini Guía por Tipo de Alerta** (al final de este documento) para obtener ejemplos específicos de consultas y personalizarlos según tu necesidad.
 2. Configura el umbral y las condiciones de activación en la sección **Define alert condition**.
 
-### 3. Configurar el Comportamiento de Evaluación (Evaluation Behavior)
+### 7.1.4 Configurar el Comportamiento de Evaluación (Evaluation Behavior)
 
 En este paso necesitas seleccionar o crear un folder y un **evaluation group**, además de definir el tiempo de evaluación y el período pendiente.
 
@@ -1606,7 +1620,7 @@ En este paso necesitas seleccionar o crear un folder y un **evaluation group**, 
      - Si no te importa que la CPU esté al 100% durante unos segundos, puedes configurar el **Pending Period** en `2m` para activar la alerta solo si la condición persiste más de 2 minutos.
 
 
-### 4. Configurar el Canal de Notificación
+### 7.1.5 Configurar el Canal de Notificación
 
 1. En la sección **Contact points**, selecciona un canal existente o configura uno nuevo.
    - Si no tienes ningún canal configurado:
@@ -1619,7 +1633,7 @@ En este paso necesitas seleccionar o crear un folder y un **evaluation group**, 
      - Guarda la configuración.
 2. Asocia el canal de notificación configurado con tu alerta.
 
-### 5. Personalizar el Mensaje de Alerta
+### 7.1.6 Personalizar el Mensaje de Alerta
 
 1. En la sección de notificaciones, puedes añadir un mensaje informativo para identificar rápidamente el contexto de la alerta.
    - Ejemplos:
@@ -1634,15 +1648,15 @@ En este paso necesitas seleccionar o crear un folder y un **evaluation group**, 
 
 3. Guarda los cambios.
 
-### 6. Guardar la Alerta
+### 7.1.7 Guardar la Alerta
 
 Una vez completados los pasos anteriores, guarda la alerta para activarla.
 
 
   
- # Mini Guía por Tipo de Alerta
+## 7.2 Mini Guía por Tipo de Alerta
 
-## CPU
+### 7.2.1 Alerta de CPU
 
 - **A. Consulta (Query)**:
   ```flux
@@ -1672,7 +1686,7 @@ Una vez completados los pasos anteriores, guarda la alerta para activarla.
 
 ---
 
-## Memoria
+### 7.2.2 Alerta de Memoria
 
 - **A. Consulta (Query)**:
   ```flux
@@ -1707,7 +1721,7 @@ Una vez completados los pasos anteriores, guarda la alerta para activarla.
 
 ---
 
-## Disco
+### 7.2.3 Alerta de Disco
 
 - **A. Consulta (Query)**:
   ```flux
@@ -1736,7 +1750,7 @@ Una vez completados los pasos anteriores, guarda la alerta para activarla.
 
 ---
 
-## Servicios
+### 7.2.4 Alerta de Servicios
 
 - **A. Consulta (Query)**:
   ```flux
@@ -1770,7 +1784,7 @@ Una vez completados los pasos anteriores, guarda la alerta para activarla.
 
 ---
 
-## Docker
+### 7.2.5 Alerta de Docker
 
 - **A. Consulta (Query)**:
   ```flux
