@@ -1,18 +1,29 @@
 [
     {
-      "url": "https://httpstat.us/500",
-      "alias": "prueba/500",
-      "keywords": "frontend"
+        "url": "https://httpstat.us/500",
+        "alias": "prueba/500",
+        "keywords": "frontend",
+        "servidor": "servidor_1",
+        "proyecto": "proyecto_A",
+        "maquina_virtual": "VM_1",
+        "administrador": "admin_1"
     },
     {
         "url": "https://httpstat.us/403",
         "alias": "prueba/403",
-        "keywords": "api"
+        "keywords": "api",
+        "servidor": "servidor_2",
+        "proyecto": "proyecto_B",
+        "maquina_virtual": "VM_2",
+        "administrador": "admin_2"
     },
     {
         "url": "http://localhost:27017/",
         "alias": "mongodb",
-        "keywords": "mongodb"
-      }
-  ]
-  
+        "keywords": "mongodb",
+        "servidor": "servidor_1",
+        "proyecto": "proyecto_A",
+        "maquina_virtual": "VM_3",
+        "administrador": "admin_3"
+    }
+]

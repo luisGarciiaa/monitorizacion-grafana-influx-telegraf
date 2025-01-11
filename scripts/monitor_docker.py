@@ -23,7 +23,7 @@ try:
             container_status = container.status
 
             if container_status == "running":
-                print(f"http_response,nombre={alias},source=docker,keywords={keywords} ,status_code=200,message=\"OK\"")
+                print(f"http_response,nombre={alias},source=docker,keywords={keywords} status_code=200,message=\"OK\"")
             else:
                 print(f"http_response,nombre={alias},source=docker,keywords={keywords} status_code=500,message=\"{container_status}\"")
         except docker.errors.NotFound:

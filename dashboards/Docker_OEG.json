@@ -82,7 +82,7 @@
       "pluginVersion": "11.3.0",
       "targets": [
         {
-          "query": "union(\n  tables: [\n    from(bucket: \"${bucket}\")\n      |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n      |> filter(fn: (r) => r[\"_measurement\"] == \"docker\")\n      |> filter(fn: (r) => r[\"_field\"] == \"n_containers_running\")\n      |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n      |> map(fn: (r) => ({ _value: r._value, metric: \"Contenedores Activos\" })),\n    from(bucket: \"${bucket}\")\n      |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n      |> filter(fn: (r) => r[\"_measurement\"] == \"docker\")\n      |> filter(fn: (r) => r[\"_field\"] == \"n_containers_stopped\")\n      |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n      |> map(fn: (r) => ({ _value: r._value, metric: \"Contenedores Parados\" })),\n    from(bucket: \"${bucket}\")\n      |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n      |> filter(fn: (r) => r[\"_measurement\"] == \"docker\")\n      |> filter(fn: (r) => r[\"_field\"] == \"n_containers_paused\")\n      |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n      |> map(fn: (r) => ({ _value: r._value, metric: \"Contenedores Pausados\" })),\n    from(bucket: \"${bucket}\")\n      |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n      |> filter(fn: (r) => r[\"_measurement\"] == \"docker\")\n      |> filter(fn: (r) => r[\"_field\"] == \"n_images\")\n      |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n      |> map(fn: (r) => ({ _value: r._value, metric: \"Imágenes Disponibles\" }))\n  ]\n)\n  |> rename(columns: { _value: \"Valor\", metric: \"Métrica\" })\n  |> group(columns: [\"Métrica\"])\n",
+          "query": "union(\n  tables: [\n    from(bucket: \"${bucket}\")\n      |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n      |> filter(fn: (r) => r[\"host\"] =~ /${host:regex}/)\n      |> filter(fn: (r) => r[\"_measurement\"] == \"docker\")\n      |> filter(fn: (r) => r[\"_field\"] == \"n_containers_running\")\n      |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n      |> map(fn: (r) => ({ _value: r._value, metric: \"Contenedores Activos\" })),\n    from(bucket: \"${bucket}\")\n      |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n      |> filter(fn: (r) => r[\"host\"] =~ /${host:regex}/)\n      |> filter(fn: (r) => r[\"_measurement\"] == \"docker\")\n      |> filter(fn: (r) => r[\"_field\"] == \"n_containers_stopped\")\n      |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n      |> map(fn: (r) => ({ _value: r._value, metric: \"Contenedores Parados\" })),\n    from(bucket: \"${bucket}\")\n      |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n      |> filter(fn: (r) => r[\"host\"] =~ /${host:regex}/)\n      |> filter(fn: (r) => r[\"_measurement\"] == \"docker\")\n      |> filter(fn: (r) => r[\"_field\"] == \"n_containers_paused\")\n      |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n      |> map(fn: (r) => ({ _value: r._value, metric: \"Contenedores Pausados\" })),\n    from(bucket: \"${bucket}\")\n      |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n      |> filter(fn: (r) => r[\"host\"] =~ /${host:regex}/)\n      |> filter(fn: (r) => r[\"_measurement\"] == \"docker\")\n      |> filter(fn: (r) => r[\"_field\"] == \"n_images\")\n      |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n      |> map(fn: (r) => ({ _value: r._value, metric: \"Imágenes Disponibles\" }))\n  ]\n)\n  |> rename(columns: { _value: \"Valor\", metric: \"Métrica\" })\n  |> group(columns: [\"Métrica\"])\n",
           "refId": "A"
         }
       ],
@@ -180,7 +180,7 @@
             "type": "influxdb",
             "uid": "fe2r5unjgi3uoa"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"docker_container_cpu\")\n  |> filter(fn: (r) => r[\"_field\"] == \"usage_percent\")\n  |> filter(fn: (r) => r[\"container_name\"] =~ /${container:regex}/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"host\"] =~ /${host:regex}/)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"docker_container_cpu\")\n  |> filter(fn: (r) => r[\"_field\"] == \"usage_percent\")\n  |> filter(fn: (r) => r[\"container_name\"] =~ /${container:regex}/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
           "refId": "A"
         }
       ],
@@ -275,7 +275,7 @@
             "type": "influxdb",
             "uid": "fe2r5unjgi3uoa"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"docker_container_mem\")\n  |> filter(fn: (r) => r[\"_field\"] == \"usage\")\n  |> filter(fn: (r) => r[\"container_name\"] =~ /${container:regex}/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"host\"] =~ /${host:regex}/)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"docker_container_mem\")\n  |> filter(fn: (r) => r[\"_field\"] == \"usage\")\n  |> filter(fn: (r) => r[\"container_name\"] =~ /${container:regex}/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
           "refId": "A"
         }
       ],
@@ -345,7 +345,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 12,
         "x": 0,
         "y": 10
@@ -370,7 +370,7 @@
             "type": "influxdb",
             "uid": "fe2r5unjgi3uoa"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"docker_container_blkio\")\n  |> filter(fn: (r) => r[\"_field\"] == \"io_service_bytes_recursive_read\" or r[\"_field\"] == \"io_service_bytes_recursive_write\")\n  |> filter(fn: (r) => r[\"container_name\"] =~ /${container:regex}/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")\n",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"host\"] =~ /${host:regex}/)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"docker_container_blkio\")\n  |> filter(fn: (r) => r[\"_field\"] == \"io_service_bytes_recursive_read\" or r[\"_field\"] == \"io_service_bytes_recursive_write\")\n  |> filter(fn: (r) => r[\"container_name\"] =~ /${container:regex}/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")\n",
           "refId": "A"
         }
       ],
@@ -440,7 +440,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 12,
         "x": 12,
         "y": 10
@@ -465,7 +465,7 @@
             "type": "influxdb",
             "uid": "fe2r5unjgi3uoa"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"docker_container_net\")\n  |> filter(fn: (r) => r[\"_field\"] == \"rx_bytes\" or r[\"_field\"] == \"tx_bytes\")\n  |> filter(fn: (r) => r[\"container_name\"] =~ /${container:regex}/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")\n",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"host\"] =~ /${host:regex}/)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"docker_container_net\")\n  |> filter(fn: (r) => r[\"_field\"] == \"rx_bytes\" or r[\"_field\"] == \"tx_bytes\")\n  |> filter(fn: (r) => r[\"container_name\"] =~ /${container:regex}/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")\n",
           "refId": "A"
         }
       ],
@@ -513,6 +513,29 @@
         "refresh": 2,
         "regex": "",
         "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "definition": "import \"influxdata/influxdb/v1\"\nv1.tagValues(bucket: \"${bucket}\", tag: \"host\")\n",
+        "description": "\n",
+        "includeAll": true,
+        "multi": true,
+        "name": "host",
+        "options": [],
+        "query": {
+          "query": "import \"influxdata/influxdb/v1\"\nv1.tagValues(bucket: \"${bucket}\", tag: \"host\")\n"
+        },
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
       }
     ]
   },
@@ -524,6 +547,6 @@
   "timezone": "browser",
   "title": "Docker_OEG",
   "uid": "be7eosq3o6h34e",
-  "version": 13,
+  "version": 16,
   "weekStart": ""
 }

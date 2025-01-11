@@ -337,6 +337,216 @@
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 0,
+        "y": 11
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "query": "from(bucket: \"DatosPrueba\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop) // Rango de tiempo dinámico del panel\n  |> filter(fn: (r) => r[\"_measurement\"] == \"docker_gen\") // Filtra los datos de 'servicio_gen'\n  |> filter(fn: (r) => r[\"_field\"] == \"status_code\") // Filtro para los códigos de estado\n  \n  //|> filter(fn: (r) => r[\"nombre\"] == \"alpine\")\n  //|> filter(fn: (r) => r[\"keywords\"] == \"database\")\n\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\") // Reestructura los datos para 'status_code'\n  |> keep(columns: [\"_time\", \"nombre\", \"status_code\"]) // Conserva solo las columnas necesarias\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Alertas_Docker",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fe2r5unjgi3uoa"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "url Error del Cliente"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "url Error del Servidor"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "url Éxito"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "url Redirección"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 11
+      },
+      "id": 8,
+      "options": {
+        "displayLabels": [
+          "value"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"servicio_gen\")\n  |> filter(fn: (r) => r[\"_field\"] == \"status_code\")\n  |> group(columns: [\"url\"])\n  |> sort(columns: [\"_time\"], desc: true)\n  |> unique(column: \"url\")\n  |> map(fn: (r) => ({\n      r with\n      _value: if r._value < 300 then \"Éxito\"\n              else if r._value < 400 then \"Redirección\"\n              else if r._value < 500 then \"Error del Cliente\"\n              else \"Error del Servidor\"\n  }))\n  |> group(columns: [\"_value\"])\n  |> count(column: \"url\")\n  |> yield(name: \"status_distribution\")\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Estado de Servicios",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fe2r5unjgi3uoa"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
             "lineStyle": {
               "fill": "solid"
             },
@@ -376,7 +586,7 @@
         "h": 5,
         "w": 12,
         "x": 0,
-        "y": 11
+        "y": 16
       },
       "id": 6,
       "options": {
@@ -399,95 +609,6 @@
         }
       ],
       "title": "Alertas_Servicios",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "fe2r5unjgi3uoa"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 12,
-        "x": 12,
-        "y": 11
-      },
-      "id": 7,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "11.3.0",
-      "targets": [
-        {
-          "query": "from(bucket: \"DatosPrueba\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop) // Rango de tiempo dinámico del panel\n  |> filter(fn: (r) => r[\"_measurement\"] == \"docker_gen\") // Filtra los datos de 'servicio_gen'\n  |> filter(fn: (r) => r[\"_field\"] == \"status_code\") // Filtro para los códigos de estado\n  \n  //|> filter(fn: (r) => r[\"nombre\"] == \"alpine\")\n  //|> filter(fn: (r) => r[\"keywords\"] == \"database\")\n\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\") // Reestructura los datos para 'status_code'\n  |> keep(columns: [\"_time\", \"nombre\", \"status_code\"]) // Conserva solo las columnas necesarias\n",
-          "refId": "A"
-        }
-      ],
-      "title": "Alertas_Docker",
       "type": "timeseries"
     }
   ],
@@ -521,6 +642,6 @@
   "timezone": "browser",
   "title": "Servicios_OEG",
   "uid": "ee5m7qif3mayob1",
-  "version": 18,
+  "version": 19,
   "weekStart": ""
 }
