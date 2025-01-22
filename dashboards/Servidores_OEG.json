@@ -218,7 +218,7 @@
       "pluginVersion": "11.3.0",
       "targets": [
         {
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"disk\")\n  |> filter(fn: (r) => r[\"_field\"] == \"used_percent\" or r[\"_field\"] == \"free_percent\")\n  |> filter(fn: (r) => r[\"host\"] =~ /${host:regex}/)\n  |> filter(fn: (r) => r[\"has_mongo\"] =~ /${Mongo:regex}/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")\n",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"disk\")\n  |> filter(fn: (r) => r[\"_field\"] == \"used\" or r[\"_field\"] == \"free\")  // Trabaja con valores absolutos\n  |> filter(fn: (r) => r[\"host\"] =~ /${host:regex}/)\n  |> filter(fn: (r) => r[\"has_mongo\"] =~ /${Mongo:regex}/)\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)  // Suma los valores por partición\n  |> group(columns: [\"host\"])  // Agrupa por servidor\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")  // Reorganiza los campos en columnas\n  |> map(fn: (r) => ({\n        _time: r._time,\n        _value: float(v: r[\"used\"]) / (float(v: r[\"used\"]) + float(v: r[\"free\"])) * 100.0,\n        host: r.host\n    }))\n  |> keep(columns: [\"_time\", \"_value\", \"host\"])  // Mantén solo las columnas esenciales\n  |> yield(name: \"mean\")\n",
           "refId": "A"
         }
       ],
@@ -327,8 +327,8 @@
     "list": [
       {
         "current": {
-          "text": "DatosPrueba",
-          "value": "DatosPrueba"
+          "text": "nuevoBucket",
+          "value": "nuevoBucket"
         },
         "definition": "buckets()",
         "name": "bucket",
@@ -343,12 +343,8 @@
       {
         "allValue": ".*",
         "current": {
-          "text": [
-            "luisgarcia-VirtualBox"
-          ],
-          "value": [
-            "luisgarcia-VirtualBox"
-          ]
+          "text": "All",
+          "value": "$__all"
         },
         "definition": "import \"influxdata/influxdb/v1\"\nv1.tagValues(bucket: \"${bucket}\", tag: \"host\")\n",
         "includeAll": true,
@@ -383,13 +379,13 @@
     ]
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Servidores_OEG",
   "uid": "ce6eygrr7c0e8c",
-  "version": 21,
+  "version": 22,
   "weekStart": ""
 }
