@@ -1,0 +1,218 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 21,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fe2r5unjgi3uoa"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [
+            {
+              "options": {
+                "running": {
+                  "color": "green",
+                  "index": 0
+                },
+                "sleep": {
+                  "color": "light-blue",
+                  "index": 1
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "light-blue",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status luisgarcia-VirtualBox"
+            },
+            "properties": [
+              {
+                "id": "custom.width"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 23,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Hora_Inicio"
+          }
+        ]
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "fe2r5unjgi3uoa"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: -30s, stop: now())\n  |> filter(fn: (r) => r[\"host\"] =~ /${host:regex}/)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"procstat\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\") // Reorganiza los datos para procesarlos mejor\n  |> group(columns: [\"host\"])  // Agrupa por host \n  |> sort(columns: [\"_time\"], desc: true)  // Ordena por tiempo de forma descendente\n  |> unique(column: \"pid\")  // Obtén el último registro basado en el PID\n  |> map(fn: (r) => ({\n        r with\n        created_at2: time(v: int(v: r.created_at))  // Convierte a un formato legible como timestamp\n      }))\n  |> keep(columns: [\"_time\", \"host\", \"status\", \"user\", \"process_name\", \"pid\", \"memory_usage\", \"pid_count\", \"cpu_usage\", \"disk_read_bytes\", \"disk_write_bytes\", \"created_at2\"])  // Mantén las columnas necesarias\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Procesos",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "includeByName": {},
+            "indexByName": {
+              "_time luisgarcia-VirtualBox": 0,
+              "cpu_usage luisgarcia-VirtualBox": 7,
+              "created_at luisgarcia-VirtualBox": 2,
+              "created_at2 luisgarcia-VirtualBox": 1,
+              "disk_read_bytes luisgarcia-VirtualBox": 9,
+              "disk_write_bytes luisgarcia-VirtualBox": 10,
+              "memory_usage luisgarcia-VirtualBox": 8,
+              "pid luisgarcia-VirtualBox": 4,
+              "process_name luisgarcia-VirtualBox": 3,
+              "status luisgarcia-VirtualBox": 6,
+              "user luisgarcia-VirtualBox": 5
+            },
+            "renameByName": {
+              "created_at2 luisgarcia-VirtualBox": "Hora_Inicio"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "nuevoBucket",
+          "value": "nuevoBucket"
+        },
+        "definition": "buckets()",
+        "name": "bucket",
+        "options": [],
+        "query": {
+          "query": "buckets()"
+        },
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "definition": "import \"influxdata/influxdb/v1\"\nv1.tagValues(bucket: \"${bucket}\", tag: \"host\")",
+        "includeAll": true,
+        "multi": true,
+        "name": "host",
+        "options": [],
+        "query": {
+          "query": "import \"influxdata/influxdb/v1\"\nv1.tagValues(bucket: \"${bucket}\", tag: \"host\")"
+        },
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Procesos_OEG",
+  "uid": "dead5r8ythm9sf",
+  "version": 13,
+  "weekStart": ""
+}
