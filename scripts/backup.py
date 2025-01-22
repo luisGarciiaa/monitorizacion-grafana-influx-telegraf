@@ -50,23 +50,32 @@ def get_unique_hosts(bucket):
 
 
 def save_to_zip(data, filename):
-    """Guarda los datos en un archivo ZIP."""
-    print(f"Guardando datos en el archivo ZIP '{filename}'")  # Depuración
+    """Guarda los datos en un archivo ZIP, incluyendo la fecha en los nombres de los archivos CSV."""
     os.makedirs(EXPORT_DIR, exist_ok=True)
     zip_path = os.path.join(EXPORT_DIR, filename)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # Fecha y hora actual
+    
     with zipfile.ZipFile(zip_path, 'w') as zf:
         for name, content in data.items():
-            file_path = os.path.join(EXPORT_DIR, f"{name}.csv")
+            # Agregar la fecha al nombre del archivo CSV
+            csv_filename = f"{name}_{timestamp}.csv"
+            file_path = os.path.join(EXPORT_DIR, csv_filename)
+            
+            # Escribir contenido en el archivo CSV
             with open(file_path, 'w') as f:
-                print(f"Escribiendo archivo CSV: {file_path}")  # Depuración
                 f.write(content)
+            
+            # Añadir el archivo CSV al ZIP
             zf.write(file_path, os.path.basename(file_path))
+            
+            # Eliminar el archivo temporal
             os.remove(file_path)
     return zip_path
 
 
+
 def export_backup(bucket, period, granularity):
-    """Exporta datos históricos de CPU, memoria y disco y los guarda en un ZIP."""
+    """Exporta datos históricos de CPU, memoria, disco, estado de servicios y Docker y los guarda en un ZIP."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     zip_filename = f"backup_{timestamp}.zip"
     all_hosts = get_unique_hosts(bucket)
@@ -120,6 +129,26 @@ def export_backup(bucket, period, granularity):
             }}))
           |> keep(columns: ["_time", "_value", "host"])
           |> yield(name: "mean")'''
+
+    # Consulta para servicios (serie temporal)
+    queries["services"] = f'''from(bucket: "{bucket}")
+          |> range(start: -{period})
+          |> filter(fn: (r) => r["_measurement"] == "servicio_gen")
+          |> filter(fn: (r) => r["_field"] == "status_code")
+          |> aggregateWindow(every: {granularity}, fn: last, createEmpty: false)
+          |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
+          |> keep(columns: ["_time", "url", "status_code"])
+          |> yield(name: "time_series")'''
+
+    # Consulta para Docker (serie temporal)
+    queries["docker"] = f'''from(bucket: "{bucket}")
+          |> range(start: -{period})
+          |> filter(fn: (r) => r["_measurement"] == "docker_gen")
+          |> filter(fn: (r) => r["_field"] == "status_code")
+          |> aggregateWindow(every: {granularity}, fn: last, createEmpty: false)
+          |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
+          |> keep(columns: ["_time", "nombre", "status_code"])
+          |> yield(name: "docker_time_series")'''
 
     results = {}
     for query_name, query in queries.items():
