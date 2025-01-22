@@ -559,12 +559,12 @@ Ctrl + W y escribe [[inputs
 
 
 
-2. **Configuracion plugins**
+2. **Configuración Plugins**
 
-Actualmente, se han definido tres dashboards principales para monitorización. Cada uno utiliza diferentes plugins de entrada (`inputs`) de Telegraf:
+Actualmente, se han definido cuatro dashboards principales para monitorización. Cada uno utiliza diferentes plugins de entrada (`inputs`) de Telegraf:
 
 - **Dashboard de Servidores**:  
-  Monitorea el sistema general (CPU, memoria, disco) utilizando los plugins predefinidos: `cpu`, `mem`, y `disk`.  (Si hemos puesto el comando que mencionábamos antes, estos plugins se generan solos). Puedes verificar que están habilitados y configurados correctamente revisando las siguientes secciones:
+  Monitorea el sistema general (CPU, memoria, disco) utilizando los plugins predefinidos: `cpu`, `mem`, y `disk`. (Si hemos puesto el comando que mencionábamos antes, estos plugins se generan solos). Puedes verificar que están habilitados y configurados correctamente revisando las siguientes secciones:
 
   **Plugins requeridos**:  
   ```ini
@@ -620,9 +620,22 @@ Actualmente, se han definido tres dashboards principales para monitorización. C
   [[inputs.docker]]
   ```
 
+- **Dashboard Procesos**:  
+  Este dashboard se centra en la monitorización de procesos activos del sistema. Utiliza el plugin `procstat` de Telegraf.
+  **Plugin requerido**:  
+  ```ini
+  [[inputs.procstat]]
+     pid_finder = "native"
+     # pattern = "python|telegraf|docker|grafana"  # Opcion para filtrar por procesos específicos
+     pattern = ".*"  # Opcion para incluir todos los procesos
+     # user = "root|luisgarcia"  # Opcion para filtrar por usuario
+     pid_tag = true  # Incluye el PID como tag
+     interval = "30s"  # Intervalo de recolección de datos. Debe coincidir con el intervalo de la consulta Flux en el panel
+  ```
+
 ---
 
- 2. **Configuración del Plugin `[[inputs.docker]]`**
+2. **Configuración del Plugin `[[inputs.docker]]`**
 
 Para el **Dashboard Técnico de Docker**, es necesario habilitar el plugin `docker` en el archivo `telegraf.conf`. Este plugin recopila métricas directamente del socket de Docker sin necesidad de scripts adicionales.
 
@@ -647,17 +660,18 @@ Para el **Dashboard Técnico de Docker**, es necesario habilitar el plugin `dock
 
 ---
 
- 3. **Relación entre Dashboards y Plugins**
+3. **Relación entre Dashboards y Plugins**
 
 | Dashboard               | Plugins Utilizados                                          | Detalles                                                    |
 |--------------------------|------------------------------------------------------------|------------------------------------------------------------|
 | **Servidores**           | `cpu`, `mem`, `disk`                                       | No requiere configuración adicional.                       |
 | **Servicios**            | `exec` (servicios y contenedores mediante scripts)         | Usa los scripts `monitor_servicio.py` y `monitor_docker.py`.|
 | **Técnico de Docker**    | `docker`                                                   | Recopila métricas de contenedores directamente de Docker.   |
+| **Procesos_OEG**         | `procstat`                                                | Monitorea procesos activos del sistema.                    |
 
 ---
 
- 4. **Configuración General de los Plugins `exec`**
+4. **Configuración General de los Plugins `exec`**
 
 #### Configuración del plugin `exec` para el Dashboard de Servicios:
 
@@ -704,6 +718,9 @@ Para el **Dashboard Técnico de Docker**, es necesario habilitar el plugin `dock
   - El intervalo (`interval = "30s"`) puede ajustarse según tus necesidades. Intervalos más cortos permiten detectar problemas rápidamente, pero incrementan la carga del sistema.
 
 ---
+
+
+
 
 
 
@@ -1816,14 +1833,3 @@ Una vez completados los pasos anteriores, guarda la alerta para activarla.
 ## Conclusión
 
 Con esta configuración, cada usuario podrá gestionar y personalizar sus alertas en Grafana de forma sencilla. Recuerda duplicar las alertas existentes, ajustar las variables necesarias y definir los canales de notificación apropiados. Si tienes dudas, revisa las consultas proporcionadas para cada tipo de alerta y adapta los valores según tus necesidades.
-
-
-
-
-
-
-
-
-
-
-
